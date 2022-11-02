@@ -31,6 +31,40 @@
 main:
     ;; TODO
 
+
+; BEGIN:clear_leds
+clear_leds: ;; no arguments/ no return values
+	stw zero, 0x0(LEDS) ; store zeros in LED[0]
+	addi t0, LEDS, 0x4; address of LED[1]
+	stw zero, 0x0(t0); store zeros in LED[1]
+	addi t0, t0, 0x4; address of LED[2]
+	stw zero, 0x0(t0); store zeros in LED[2]
+
+; END:clear_leds
+
+; BEGIN:set_pixel
+set_pixel:
+	;; arguments a0(x-coord) a1(y-coord)
+	cmpgeui t0, a0, 0x4 ; checking if the x coord is ≥ 4
+	cmpgeui t1, a0, 0x8 ; checking if the x coord is ≥ 8
+	add t2, t1, t0 ; adding the result of the comparisons so either 0,1 or 2
+	slli t2, t2, 0x2 ; multiplying by 4
+	add t2, t2, LEDS ; point to the right LEDS 
+	ldw t3, 0x0(t2) ; getting the address of the word in which we will find the x coord
+	sub t0, a0, t2 ; identifying the byte we're looking for
+	sll t4, t3, t0 ; shifting to the left to get in the right column
+	sll t4, t4, a1 ; shifting by y-coord to get right row
+	add t1 , zero, 0x1; =1
+	xor t4, t4, t1 ; change the specified pixel
+	srl t4, t4, a1 ; shift right by y
+	srl t4, t4, t0 ; shift back to the first column of the word
+	or t3, t3, t4 ; => will only by able to turn on the designated pixel (not turn off)
+	stw t3, 0x0(t2); store the changed word in its assigned position
+; END:set_pixel
+
+
+	
+	
 font_data:
     .word 0xFC ; 0
     .word 0x60 ; 1
