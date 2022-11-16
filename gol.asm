@@ -34,11 +34,13 @@ main:
 
 ; BEGIN:clear_leds
 clear_leds: ;; no arguments/ no return values
-	stw zero, 0x0(LEDS) ; store zeros in LED[0]
-	addi t0, LEDS, 0x4; address of LED[1]
-	stw zero, 0x0(t0); store zeros in LED[1]
+	addi t1, zero, LEDS ; store leds in a register to use it
+	stw zero, 0x0(t1) ; store zeros in LED[0]
+	addi t0, t1, 0x4; address of LED[1]
+	stw zero, 0(t0); store zeros in LED[1]
 	addi t0, t0, 0x4; address of LED[2]
 	stw zero, 0x0(t0); store zeros in LED[2]
+	ret ; return empty 
 
 ; END:clear_leds
 
@@ -47,23 +49,71 @@ set_pixel:
 	;; arguments a0(x-coord) a1(y-coord)
 	cmpgeui t0, a0, 0x4 ; checking if the x coord is ≥ 4
 	cmpgeui t1, a0, 0x8 ; checking if the x coord is ≥ 8
-	add t2, t1, t0 ; adding the result of the comparisons so either 0,1 or 2
-	slli t2, t2, 0x2 ; multiplying by 4
-	add t2, t2, LEDS ; point to the right LEDS 
-	ldw t3, 0x0(t2) ; getting the address of the word in which we will find the x coord
-	sub t0, a0, t2 ; identifying the byte we're looking for
-	sll t4, t3, t0 ; shifting to the left to get in the right column
-	sll t4, t4, a1 ; shifting by y-coord to get right row
-	add t1 , zero, 0x1; =1
-	xor t4, t4, t1 ; change the specified pixel
-	srl t4, t4, a1 ; shift right by y
-	srl t4, t4, t0 ; shift back to the first column of the word
-	or t3, t3, t4 ; => will only by able to turn on the designated pixel (not turn off)
-	stw t3, 0x0(t2); store the changed word in its assigned position
+	addi t6, zero, 1 ; Initialize a var to 1
+	addi t7, zero, LEDS ; store leds in register to use it	
+	bne t6, t0 , LEDS0 ; branch to label leds 0 if x coord < 4
+	bne t6, t1, LEDS1 ; branch to label leds1 if x-coord < 8
+	
+	;if x ≥ 8 :
+	ldw t3, 0x8(t7) ; load LEDS[2] -> 3nd word
+	slli t5, t6, 3 ;  = 8
+	sub a0, a0, t5 ; x - 8 (will be non negative because x≥8)
+	slli t0, a0, 3 ; multiply x coord by 8
+	add t0, t0, a1 ; add 5 to so you get 8x + y
+	sll t2, t6, t0 ; shift the bit initialized to 1 to match the pos of the bit we are trying to change
+	or t3, t3, t2 ; modify the selected bit
+	stw t3, 0x8(t7) ; store modified word back at LEDS[2]
+	ret ;return empty
+	
+LEDS0:
+	ldw t3, 0x0(t7)
+	slli t0, a0, 3 ; multiply x coord by 8
+	add t0, t0, a1 ; add 5 to so you get 8x + y
+	sll t2, t6, t0 ; shift the bit initialized to 1 to match the pos of the bit we are trying to change
+	or t3, t3, t2 ; modify the selected bit
+	stw t3, 0x0(t7) ; store modified word back
+	ret ; return empty
+LEDS1:
+	ldw t3, 0x4(t7) ; load LEDS[1] -> 2nd word
+	slli t5, t6, 2 ;  = 4
+	sub a0, a0, t5 ; x - 4 (will be non negative because x≥4)
+	slli t0, a0, 3 ; multiply x coord by 8
+	add t0, t0, a1 ; add 5 to so you get 8x + y
+	sll t2, t6, t0 ; shift the bit initialized to 1 to match the pos of the bit we are trying to change
+	or t3, t3, t2 ; modify the selected bit
+	stw t3, 0x4(t7) ; store modified word back at LEDS[1]
+	ret ; return empty
+	
+	
 ; END:set_pixel
 
+; BEGIN:wait
+wait: ;; no arguments /no return values
+	addi t1, zero, 1 ; initializing var to 1
+	slli t0, t1, 19 ; multiplying it by 2^19
+loop: ;starting the loop
+	sub t0, t0, t1 ; decrement counter by 1
+	bne zero,t0, loop ; branch to loop if counter not equal to 0
+	ret ; return empty
+; END:wait
 
-	
+; BEGIN:get_gsa
+get_gsa: ;; argument a0(y coord for gsa line 0≤y≤7) / return v0(gsa line at y coord)
+	addi t0, zero, 1 ; init var to 1
+	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
+	beq t2, t0, gsa_1 ; branch if gsa 1 is the current
+	slli t1, a0, 2 ; multiply y by 4
+
+gsa_0: ;if gsa_0 is the curr then gsa_1 is the next
+	ldw v0, GSA1(t1) ; load the gsa at line y into v0 from gsa_1
+	ret 
+
+
+gsa_1: ; if gsa_1 is the current then gsa_0 is the next
+	ldw v0, GSA0(t1) ; load the gsa at line y into v0 from gsa_0
+	ret
+
+; END:get_gsa	
 	
 font_data:
     .word 0xFC ; 0
