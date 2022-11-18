@@ -35,11 +35,11 @@ main:
 ; BEGIN:clear_leds
 clear_leds: ;; no arguments/ no return values
 	addi t1, zero, LEDS ; store leds in a register to use it
-	stw zero, 0x0(t1) ; store zeros in LED[0]
-	addi t0, t1, 0x4; address of LED[1]
+	stw zero, 0(t1) ; store zeros in LED[0]
+	addi t0, t1, 4; address of LED[1]
 	stw zero, 0(t0); store zeros in LED[1]
-	addi t0, t0, 0x4; address of LED[2]
-	stw zero, 0x0(t0); store zeros in LED[2]
+	addi t0, t0, 4; address of LED[2]
+	stw zero, 0(t0); store zeros in LED[2]
 	ret ; return empty 
 
 ; END:clear_leds
@@ -47,34 +47,34 @@ clear_leds: ;; no arguments/ no return values
 ; BEGIN:set_pixel
 set_pixel:
 	;; arguments a0(x-coord) a1(y-coord)
-	cmpgeui t0, a0, 0x4 ; checking if the x coord is ≥ 4
-	cmpgeui t1, a0, 0x8 ; checking if the x coord is ≥ 8
+	cmpgeui t0, a0, 4 ; checking if the x coord is ≥ 4
+	cmpgeui t1, a0, 8 ; checking if the x coord is ≥ 8
 	addi t6, zero, 1 ; Initialize a var to 1
 	addi t7, zero, LEDS ; store leds in register to use it	
 	bne t6, t0 , LEDS0 ; branch to label leds 0 if x coord < 4
 	bne t6, t1, LEDS1 ; branch to label leds1 if x-coord < 8
 	
 	;if x ≥ 8 :
-	ldw t3, 0x8(t7) ; load LEDS[2] -> 3nd word
+	ldw t3, 8(t7) ; load LEDS[2] -> 3nd word
 	slli t5, t6, 3 ;  = 8
 	sub a0, a0, t5 ; x - 8 (will be non negative because x≥8)
 	slli t0, a0, 3 ; multiply x coord by 8
 	add t0, t0, a1 ; add 5 to so you get 8x + y
 	sll t2, t6, t0 ; shift the bit initialized to 1 to match the pos of the bit we are trying to change
 	or t3, t3, t2 ; modify the selected bit
-	stw t3, 0x8(t7) ; store modified word back at LEDS[2]
+	stw t3, 8(t7) ; store modified word back at LEDS[2]
 	ret ;return empty
 	
 LEDS0:
-	ldw t3, 0x0(t7)
+	ldw t3, 0(t7)
 	slli t0, a0, 3 ; multiply x coord by 8
 	add t0, t0, a1 ; add 5 to so you get 8x + y
 	sll t2, t6, t0 ; shift the bit initialized to 1 to match the pos of the bit we are trying to change
 	or t3, t3, t2 ; modify the selected bit
-	stw t3, 0x0(t7) ; store modified word back
+	stw t3, 0(t7) ; store modified word back
 	ret ; return empty
 LEDS1:
-	ldw t3, 0x4(t7) ; load LEDS[1] -> 2nd word
+	ldw t3, 4(t7) ; load LEDS[1] -> 2nd word
 	slli t5, t6, 2 ;  = 4
 	sub a0, a0, t5 ; x - 4 (will be non negative because x≥4)
 	slli t0, a0, 3 ; multiply x coord by 8
@@ -101,20 +101,36 @@ loop: ;starting the loop
 get_gsa: ;; argument a0(y coord for gsa line 0≤y≤7) / return v0(gsa line at y coord)
 	addi t0, zero, 1 ; init var to 1
 	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
-	beq t2, t0, gsa_1 ; branch if gsa 1 is the current
 	slli t1, a0, 2 ; multiply y by 4
-
-gsa_0: ;if gsa_0 is the curr then gsa_1 is the next
+	beq t2, t0, get_1 ; branch if gsa 1 is the current
+	
+get_0: ;if gsa_0 is the curr then gsa_1 is the next
 	ldw v0, GSA1(t1) ; load the gsa at line y into v0 from gsa_1
 	ret 
 
 
-gsa_1: ; if gsa_1 is the current then gsa_0 is the next
+get_1: ; if gsa_1 is the current then gsa_0 is the next
 	ldw v0, GSA0(t1) ; load the gsa at line y into v0 from gsa_0
 	ret
 
-; END:get_gsa	
+; END:get_gsa
+
+; BEGIN:set_gsa
+set_gsa: ;;arguments a0(GSA line), a1(y-coord to insert line at)/ return none
+	addi t0, zero, 1 ; init var to 1
+	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
+	slli t1, a1, 2 ; multiply y by 4
+	beq t2, t0, set_1 ; branch if gsa 1 is the current
 	
+set_0: ;if gsa_0 is the curr then gsa_1 is the next
+	stw a0, GSA1(t1) ; load the gsa at line y into v0 from gsa_1
+	ret 
+
+set_1: ; if gsa_1 is the current then gsa_0 is the next
+	stw a0, GSA0(t1) ; load the gsa at line y into v0 from gsa_0
+	ret	
+; END:set_gsa
+
 font_data:
     .word 0xFC ; 0
     .word 0x60 ; 1
