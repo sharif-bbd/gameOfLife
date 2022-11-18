@@ -123,11 +123,11 @@ set_gsa: ;;arguments a0(GSA line), a1(y-coord to insert line at)/ return none
 	beq t2, t0, set_1 ; branch if gsa 1 is the current
 	
 set_0: ;if gsa_0 is the curr then gsa_1 is the next
-	stw a0, GSA1(t1) ; load the gsa at line y into v0 from gsa_1
+	stw a0, GSA1(t1) ; store the line at coord y in gsa_1
 	ret 
 
 set_1: ; if gsa_1 is the current then gsa_0 is the next
-	stw a0, GSA0(t1) ; load the gsa at line y into v0 from gsa_0
+	stw a0, GSA0(t1) ; store the line at coord y in gsa_0
 	ret	
 ; END:set_gsa
 
