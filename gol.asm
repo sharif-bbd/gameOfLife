@@ -44,6 +44,11 @@ clear_leds: ;; no arguments/ no return values
 
 ; END:clear_leds
 
+
+
+
+
+
 ; BEGIN:set_pixel
 set_pixel:
 	;; arguments a0(x-coord) a1(y-coord)
@@ -87,6 +92,10 @@ LEDS1:
 	
 ; END:set_pixel
 
+
+
+
+
 ; BEGIN:wait
 wait: ;; no arguments /no return values
 	addi t1, zero, 1 ; initializing var to 1
@@ -96,6 +105,10 @@ loop: ;starting the loop
 	bne zero,t0, loop ; branch to loop if counter not equal to 0
 	ret ; return empty
 ; END:wait
+
+
+
+
 
 ; BEGIN:get_gsa
 get_gsa: ;; argument a0(y coord for gsa line 0≤y≤7) / return v0(gsa line at y coord)
@@ -115,6 +128,10 @@ get_1: ; if gsa_1 is the current then gsa_0 is the next
 
 ; END:get_gsa
 
+
+
+
+
 ; BEGIN:set_gsa
 set_gsa: ;;arguments a0(GSA line), a1(y-coord to insert line at)/ return none
 	addi t0, zero, 1 ; init var to 1
@@ -130,6 +147,70 @@ set_1: ; if gsa_1 is the current then gsa_0 is the next
 	stw a0, GSA0(t1) ; store the line at coord y in gsa_0
 	ret	
 ; END:set_gsa
+
+
+
+
+	
+; BEGIN:draw_gsa
+draw_gsa: ;; arguments none / return none
+	addi t0, zero, 1 ; init var to 1
+	addi t5, zero, 1 ; constant 1 (model for comparison)
+	add t1, zero, zero ; init var to 0 (counter for y coord)
+	add t3, zero,zero ; counter for x coord
+	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
+	beq t2, t0, draw_1_y ; branch if gsa 1 is the current
+
+
+	;; if the current gsa is 0
+draw_0_y: ; draw GSA 1 y coord
+	add a0, t1, zero ; y coord to get gsa
+	addi t1, t1, 1 ; increment t1 by 1
+	call get_gsa ; gets the gsa at line a0 from gsa 1
+	add t3, zero,zero ;reinitialize x coord to 0
+	add t4, v0, zero ; store the gsa line into a var
+
+draw_0_x: ; draw each bit in the line at coord y
+	add a1, a0, zero ; y coord to set pixel
+	add a0, t3, zero ; x coord to set pixel
+	addi t3, t3, 1 ; add one to x counter
+	and t0, t4, t5 ; if the selected bit is 1 or not
+	slli t5, t5, 1 ; shift the model bit by 1 to the left to check with next bit
+	beq t0, zero, draw_0_x ; if the bit pointed at in the gsa line is 0 than go to the next bit
+	call set_pixel ;set pixel at coord x,y
+	cmpeqi t6, t3, N_GSA_COLUMNS ; if the max x coord has been attained
+	beq t6, zero, draw_0_x ; if the max x coord hasn't been attained start the loop again for x
+	cmplti t7, t1, N_GSA_LINES; if the max y coord hasn't been attained
+	beq t7, t6, draw_0_y ;if there's no more significant bits in the line but there is still other lines to go to
+	ret
+
+
+	;; if the current gsa is 1
+draw_1_y: ; draw GSA 1 y coord
+	add a0, t1, zero ; y coord to get gsa
+	addi t1, t1, 1 ; increment t1 by 1
+	call get_gsa ; gets the gsa at line a0 from gsa 1
+	add t3, zero,zero ;reinitialize x coord to 0
+	add t4, v0, zero ; store the gsa line into a var
+
+draw_1_x: ; draw each bit in the line at coord y
+	add a1, a0, zero ; y coord to set pixel
+	add a0, t3, zero ; x coord to set pixel
+	addi t3, t3, 1 ; add one to x counter
+	and t0, t4, t5 ; if the selected bit is 1 or not
+	slli t5, t5, 1 ; shift th emodel bit by 1 to the left to check with next bit
+	beq t0, zero, draw_1_x ; if the bit pointed at in the gsa line is 0 than go to the next bit
+	call set_pixel ;set pixel at coord x,y
+	cmpeqi t6, t3, N_GSA_COLUMNS; if the max x coord has been attained
+	beq t6, zero, draw_1_x; if the max x coord hasn't been attained start the loop again for x
+	cmplti t7, t1, N_GSA_LINES; if the max y coord hasn't been attained
+	beq t7, t6, draw_1_y ;if there's no more significant bits in the line but there is still other lines to go to
+	ret
+
+; END:draw_gsa
+
+
+
 
 font_data:
     .word 0xFC ; 0
