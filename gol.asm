@@ -158,7 +158,7 @@ draw_gsa: ;; arguments none / return none
 	addi t5, zero, 1 ; constant 1 (model for comparison)
 	add t1, zero, zero ; init var to 0 (counter for y coord)
 	add t3, zero,zero ; counter for x coord
-	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
+	addi t2 , zero, GSA_ID ; store gsa id in a register to use it QUESTION: GSA_ID is NOT immediate value tho
 	beq t2, t0, draw_1_y ; branch if gsa 1 is the current
 
 
@@ -208,6 +208,119 @@ draw_1_x: ; draw each bit in the line at coord y
 	ret
 
 ; END:draw_gsa
+
+
+
+; BEGIN:random_gsa
+random_gsa: ;;arguments none / return none
+	addi t5, zero, 1 ; set t5 to 1
+	addi t4, zero, GSA_ID ; get current GSA ID
+	addi t6, zero, 32
+	beq t4, t5, random_gsa1
+
+random:
+	ldw t0, RANDOM_NUM(zero)
+	sub t6, t6, t5 ; t6 - 1
+	addi t2, zero, 1 ; create constant t2
+	and t1, t2, t0 ; and operation to get last bit
+	andi t3, t1, 1 ; mod 2 operation, t3 is the generated 0/1
+	cmpnei t3, t3, 1 ; if t3=0, then set the value to 1
+	slli t7, t7, 1 ; shift left
+	or t7, t7, t3 ; store t3 at this last bit
+	bne t6, zero, random_gsa1 ; do while all 32 random bits are generated
+
+
+random_gsa1:
+	br random
+	stw t7, LEDS(zero) ; store the random bits to LED0
+	br random
+	stw t7, LEDS+4(zero) ; store the random bits to LED1
+	br random
+	stw t7, LEDS+8(zero) ; ; store the random bits to LED0 --REMARQUE-- : or store at the GSA directly? Or should I reload these to a GSA?
+
+	
+; END:random_gsa
+
+
+
+
+; BEGIN:change_speed
+change_speed: ;;arguments register a0: 0 if increment, 1 if decrement /return none
+	ldw t0, SPEED(zero) ; take the current game speed in t0
+	add t1, zero, a0 ; set t1 to val of a0
+	addi t2, zero, 1 ; set t2 to 1
+	beq t1, zero, increment_speed ; if t1 = 0 then go to increment 
+	beq t1, t2, decrement_speed ; if t1 = 1 then go to decrement
+
+increment_speed:
+	cmplti t3, t0, MAX_SPEED ; set t3 to 1 if current speed < MAX_SPEED else 0
+	add t0, t0, t3 ; add current speed and t3
+	stw t0, SPEED(zero)
+	ret ; QUESTION: can I 'ret' to simply end change_speed? aka not go to decrement_speed
+
+decrement_speed:
+	cmpgei t4, t0, 2 ; set t4 to 1 if current speed ≥ 2 else 0
+	sub t0, t0, t4 ; sub current speed and t4
+	stw t0, SPEED(zero)
+	ret
+	
+; END:change_speed
+
+
+; BEGIN:pause_game
+pause_game: ;;arguments none /return none
+	addi t0, zero, PAUSE ; set t0 to current PAUSE value
+	cmpeqi t1, t0, 0 ; set t1 to 1 if PAUSE is 0
+	stw t1, PAUSE(zero) ; store t1 at PAUSE
+
+; END:pause_game	
+
+
+; BEGIN:change_steps
+change_steps: ;;arguments register a0,a1,a2  /return none
+	addi t5, zero, CURR_STEP ; store CURR_STEP
+	cmpeqi t0, a0, 1
+	cmpeqi t1, a1, 1
+	cmpeqi t2, a2, 1
+
+	;curr_step = curr_step + 16^2*t + 16^1*t1 + 16^0*t0 
+
+;for b2 0000........ b1 ....0000.... b0........0000
+; END:change_steps	
+
+
+
+; BEGIN:increment_seed
+increment_seed: ;;arguments none / return none
+	addi t0, zero, CURR_STATE ; set t0 to current game state
+	cmpeqi t1, t0, INIT ; set t1 to 1 if curr_state = INIT
+	add t0, t0, t1 ; add t1 to current state
+	stw t0, CURR_STATE(zero) ; put value to CURR_STATE
+
+; END:increment_seed	
+
+
+; ; BEGIN:update_state
+; update_state: ;;arguments register a0: edgecapture  / return none
+; 	add t0, zero, a0 ; set t0 to a0's value
+; 	addi t5, zero 1 ; set t5 to constant 1
+; 	addi t2, zero, 1 ; create mask 00...1
+; 	andi t1, t2, t0 ; and operation to get t0's last bit
+; 	beq t1, t5, init_state ; if last button is pressed, go to init
+; 	beq 
+
+; init_state:
+; 	add t4, zero, INIT
+; 	stw t4, CURR_STATE(zero) ; store INIT to CURR_STATE
+; 	//call reset_game
+
+
+; ; END:update_state
+
+; BEGIN:select_action:
+select_action:
+	addi t0, zero, CURR_STATE
+	cmpeqi t1, t0, INIT
 
 
 
