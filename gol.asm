@@ -154,7 +154,7 @@ set_1: ; if gsa_1 is the current then gsa_0 is the next
 
 ; BEGIN:draw_gsa
 draw_gsa: ;; arguments none / return none
-	addi sp, zero, 0x1300 ; init stack pointer to the stack bottom
+	addi sp, zero, 0x1300 ; init stack pointer to the stack bottom TODO: check si c'est ici
 	
 	addi sp, sp, -4 ; decrement stack pointer by 4
 	stw ra, 0(sp) ; store return address from main procedure
@@ -235,33 +235,85 @@ set_if_1:
 
 
 ; BEGIN:random_gsa
-random_gsa: ;;arguments none / return none
-	addi t5, zero, 1 ; set t5 to 1
+random_gsa: ;  initialize the current GSA to a random state.
+;;arguments none / return none
+	addi t5, zero, 1 ; set t5 to constant 1
 	addi t4, zero, GSA_ID ; get current GSA ID
-	addi t6, zero, 32
-	beq t4, t5, random_gsa1
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+	;beq t4, t5, random_gsa1 ; go to random_gsa1 if current gsa is 1
 
-random:
-	ldw t0, RANDOM_NUM(zero)
-	sub t6, t6, t5 ; t6 - 1
-	addi t2, zero, 1 ; create constant t2
-	and t1, t2, t0 ; and operation to get last bit
+
+	call randomizer ; todo : handle STACK, what should I put in STACK exactly? Cuz randomizer will return to here. Pop address? Make this into loop. test.
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 0 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 1 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 2 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 3 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 4 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 5 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 6 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+	addi t6, zero, 32 ; set t6 to 32 for counter
+	add t7, zero, zero ; set t7 empty register
+
+	call randomizer ; todo : STACK
+	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
+	addi a1, zero, 7 ; store 0 for arguemnt for set_gsa
+	call set_gsa ; set gsa line 0 to this random element generated
+
+randomizer:
+	ldw t0, RANDOM_NUM(zero) ; load random number from memory
+	sub t6, t6, t5 ; decrement counter
+	and t1, t5, t0 ; and operation to get last bit
 	andi t3, t1, 1 ; mod 2 operation, t3 is the generated 0/1
-	cmpnei t3, t3, 1 ; if t3=0, then set the value to 1
 	slli t7, t7, 1 ; shift left
-	or a0, t7, t3 ; store t3 at this last bit 
-	bne t6, zero, random_gsa1 ; do while all 32 random bits are generated
-
-
-random_gsa1:
-	br random
-	stw t7, LEDS(zero) ; store the random bits to LED0
-	br random
-	stw t7, LEDS+4(zero) ; store the random bits to LED1
-	br random
-	stw t7, LEDS+8(zero) ; ; store the random bits to LED0 
-	; TODO: Change it to storing to GSA, and use stacks and etc.a
-
+	or t7, t7, t3 ; store t3 at this last bit 
+	bne t6, zero, randomizer ; do while all 32 random bits are generated
+	ret ; go back to random_gsa when generating random line finished TODO: check if correct
 	
 ; END:random_gsa
 
@@ -271,29 +323,30 @@ random_gsa1:
 ; BEGIN:change_speed
 change_speed: ;;arguments register a0: 0 if increment, 1 if decrement /return none
 	ldw t0, SPEED(zero) ; take the current game speed in t0
-	add t1, zero, a0 ; set t1 to val of a0
-	addi t2, zero, 1 ; set t2 to 1
-	beq t1, zero, increment_speed ; if t1 = 0 then go to increment 
-	beq t1, t2, decrement_speed ; if t1 = 1 then go to decrement
+	; add t1, zero, a0 ; set t1 to val of a0
+	addi t2, zero, 1 ; set t2 to constant 1
+	beq a0, zero, increment_speed ; if t1 = 0 then go to increment 
+	beq a0, t2, decrement_speed ; if t1 = 1 then go to decrement
 
 increment_speed:
 	cmplti t3, t0, MAX_SPEED ; set t3 to 1 if current speed < MAX_SPEED else 0
 	add t0, t0, t3 ; add current speed and t3
-	stw t0, SPEED(zero)
-	ret
+	stw t0, SPEED(zero) ; store computed speed to SPEED
+	; ret - QUESTION: shouldn't ret right? Since no need to go back.
 
 decrement_speed:
 	cmpgei t4, t0, 2 ; set t4 to 1 if current speed ≥ 2 else 0
 	sub t0, t0, t4 ; sub current speed and t4
-	stw t0, SPEED(zero)
-	ret
+	stw t0, SPEED(zero) ; store computed speed to SPEED
+	; ret
 	
 ; END:change_speed
 
 
 ; BEGIN:pause_game
 pause_game: ;;arguments none /return none
-	addi t0, zero, PAUSE ; set t0 to current PAUSE value
+	ldw t3, PAUSE(zero) ; load current PAUSE value
+	add t0, zero, t3 ; set t0 to current PAUSE value
 	cmpeqi t1, t0, 0 ; set t1 to 1 if PAUSE is 0
 	stw t1, PAUSE(zero) ; store t1 at PAUSE
 
@@ -301,18 +354,18 @@ pause_game: ;;arguments none /return none
 
 
 ; BEGIN:change_steps
-change_steps: ;;arguments register a0,a1,a2  /return none
-	ldw t3, CURR_STEP(zero)
-	add t5, zero, t3 ; store CURR_STEP
+change_steps: ;;arguments register a0(units), a1(tens), a2(hundreds) / return none
+	ldw t3, CURR_STEP(zero) ; load CURR_STEP value
+	add t5, zero, t3 ; store CURR_STEP to t5
 
 	add t0, zero, zero ; initialize empty register
-	or t0, t0, a2 ; add a2(hundreds) value
+	or t0, t0, a2 ; store a2(hundreds) value
 	slli t0, t0, 4 ; shift 4
-	or t0, t0, a1 ; add a1(tens) value
+	or t0, t0, a1 ; store a1(tens) value
 	slli t0, t0, 4 ; shift 4
-	or t0, t0, a0 ; add a0(units) value
+	or t0, t0, a0 ; store a0(units) value
 	slli t0, t0, 4 ; shift 4
-	add t5, t5, t0 ; add CURR_STEP and the input value
+	add t5, t5, t0 ; add CURR_STEP and the input values
 
 	stw t5, CURR_STEP(zero) ; store computed value to CURR_STEP
 
@@ -322,11 +375,39 @@ change_steps: ;;arguments register a0,a1,a2  /return none
 
 ; BEGIN:increment_seed
 increment_seed: ;;arguments none / return none
-	ldw t3, CURR_STATE(zero)
-	add t0, zero, t3 ; set t0 to current game state --QUESTION: mask? How to handle?
-	cmpeqi t1, t0, INIT ; set t1 to 1 if curr_state = INIT
-	add t0, t0, t1 ; add t1 to current state
-	stw t0, CURR_STATE(zero) ; put value to CURR_STATE
+	; addi sp, sp, -4 ; decrement stack pointer by 4
+	; stw ra, 0(sp) ; store return address from main procedure
+	ldw t0, CURR_STATE(zero) ; load current state to t3
+	; add t0, zero, t3 ; set t0 to current game state
+	;beq t0, INIT, init_increment
+	;beq t0, RAND, rand_increment
+
+init_increment:
+	ldw t1, SEED(zero) ; load current SEED TODO: variable SEED is 0-4? => yes
+	addi t3, zero, 3 ; set t3 to constant 3
+	addi t4, zero, 4 ; set t3 to constant 4
+	beq t1, t3, init_increment_3 ; cf. edstream
+	beq t1, t4, init_increment_4 ; cf. edstream
+	addi t1, t1, 1 ; increment game seed by 1
+	stw t1, SEED(zero); store incremented seed to SEED
+	call mask ; QUESTION: this will take charge in copying this seed to current GSA right?
+	; pop
+	; ret
+
+init_increment_3:
+	addi t1, t1, 1 ; increment by 1
+	stw t1, SEED(zero) ; store incremented seed to SEED
+	call random_gsa
+	; pop return address
+	; ret
+	; TODO: "break" how? cuz ret is going to return to the called place no?
+
+init_increment_4:
+	call random_gsa
+
+rand_increment:
+	call random_gsa
+
 
 ; END:increment_seed	
 
@@ -453,9 +534,21 @@ init_select_action:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
+	beq t0, t6, increment_seed ; generate new GSA
+	beq t1, t6, update_state ; go to RUN
+	beq t2, t6, change_steps ; if button 2 is pressed, change steps
+	beq t3, t6, change_steps ; if button 3 is pressed, change steps
+	beq t4, t6, change_steps ; if button 4 is pressed, change steps
+
 
 rand_select_action:
 
+	add t0, zero, zero ; initialize registers to 0
+	add t1, zero, zero ; initialize registers to 0
+	add t2, zero, zero ; initialize registers to 0
+	add t3, zero, zero ; initialize registers to 0
+	add t4, zero, zero ; initialize registers to 0
+
 	add t5, zero, a0 ; copy a0
 	addi t6, zero, 1 ; set constant 1
 	and t0, t5, t6 ; mask and get b0
@@ -469,13 +562,20 @@ rand_select_action:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	;beq t1, t6, start
-	beq t0, t6, update_state
-	beq t2, t6, update_state
-	beq t3, t6, update_state
-	beq t4, t6, update_state
+	
+	beq t0, t6, random_gsa ; generate new GSA
+	beq t1, t6, update_state ; go to RUN 
+	beq t2, t6, change_steps ; if button 2 is pressed, change steps
+	beq t3, t6, change_steps ; if button 3 is pressed, change steps
+	beq t4, t6, change_steps ; if button 4 is pressed, change steps
 
 run_select_action:
+	add t0, zero, zero ; initialize registers to 0 
+	add t1, zero, zero ; initialize registers to 0
+	add t2, zero, zero ; initialize registers to 0
+	add t3, zero, zero ; initialize registers to 0
+	add t4, zero, zero ; initialize registers to 0
+
 	add t5, zero, a0 ; copy a0
 	addi t6, zero, 1 ; set constant 1
 	and t0, t5, t6 ; mask and get b0
@@ -489,13 +589,20 @@ run_select_action:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	beq t0, t6, pause_game
+	beq t0, t6, pause_game ; if button 0 pressed, call pause_game TODO: beq or call? 
 	addi a0, zero, 0 ; set a0 to 0, increment
-	beq t1, t6, change_speed ; increment speed by 1
+	; store return address
+	beq t1, t6, change_speed ; if button 1 pressed,increment speed by 1
+	;call t1, t6, change_speed ; if button 1 pressed,increment speed by 1
+
 	addi a0, zero, 1 ; set a0 to 1, decrement
-	beq t2, t6, change_speed ; decrement speed by 1
-	beq t3, t6, reset_game
-	beq t4, t6, update_state ; --explanation 2.4.3 and state diagram difference, random state or come back to run? => Stay in RUN but call random_gsa
+	beq t2, t6, change_speed ; if button 2 pressed, decrement speed by 1
+	beq t3, t6, reset_game ; if button 3 pressed, reset_game
+	beq t4, t6, random_gsa ; if button 4 pressed, call randmo gsa--explanation 2.4.3 and state diagram difference, random state or come back to run? => Stay in RUN but call random_gsa
+
+
+; END:select_action
+
 
 
 ; BEGIN:cell_fate
@@ -644,13 +751,66 @@ find_neighbours:
 
 ; END:find_neighbours
 		
+; BEGIN:update_gsa
+update_gsa: ;;arguments none /return none
+
+; END:update_gsa
+
+
+; BEGIN:mask
+mask: ;;arguments none /return none
+	; ldw t0, SEED(zero) ; load the game's seed TODO: is it 0-4?
+	; beq t0, 0, apply_mask1
+	; beq t0, 1, apply_mask2
+	; beq t0, 2, apply_mask3
+	; beq t0, 3, apply_mask4
+	; beq t0, 4, apply_mask5
+
+	addi t4, zero, 7 ; constant 7
+
+
+
+apply_mask0:
+	addi t5, zero, 0 ; loop counter for line coord.
+	slli t3, t5, 2 ; multiply by 4 
+	;ldw t0, mask0+t3(zero) ; get mask 0's line 0 TODO: how to use loop and update memory address?
+	;addi a0, zero, t5 ; put 0 to a0
+	call get_gsa
+	add t1, zero, v0 ; store gsa line 0 at t1
+	and t0, t0, t1 ; and operation mask and gsa line
+	add a0, zero, t0 ; store masked line to a0
+	;addi a1, zero, t5 ; store line coord.
+	call set_gsa ; TODO : set gsa or update gsa? Modify current or next gsa => Edstreem says current
+	addi t5, t5, 1 ; update counter by 1
+	bne t4, t5, apply_mask0
+
+apply_mask1:
+apply_mask2:
+apply_mask3:
+apply_mask4:
+
+
+	; ldw t1, mask1+4(zero)
+	; ldw t2, SEED+8(zero)
+	; ldw t3, SEED+12(zero)
+	; ldw t4, SEED+16(zero)
+	; ldw t5, SEED+20(zero)
+	; ldw t6, SEED+24(zero)
+	; ldw t7, SEED+28(zero)
+
+
+
+
+; END:mask
 
 
 ; BEGIN:reset_game
 reset_game: ;;arguments none /return none
 	addi t0, zero, 1 ; constant 1
-	stw t0, CURR_STEP(zero) ; store 1 in CURR_STEP
-	stw zero, CURR_STATE(zero)
+	stw t0, CURR_STEP(zero) ; 1. store 1 in CURR_STEP 
+	stw t0, SEVEN_SEGS(zero) ; TODO: 7-seg display to 1 like this?
+;	stw seed0, SEEDS(zero) ; TODO: store seeds
+	stw zero, CURR_STATE(zero) ; set current game state to 0
 	stw zero, GSA_ID(zero) ; set GSA_ID to zero
 	stw t0, PAUSE(zero) ; set PAUSE to 1
 	stw t0, SPEED(zero) ; set game speed to 1
