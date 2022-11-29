@@ -65,13 +65,35 @@ main:
 	addi a1, zero, 7
 	call set_gsa
 
-	; call draw_gsa
+	; ; call draw_gsa
+	addi t0, zero, 1
+	stw t0, PAUSE(zero)
 	
-	; call update_gsa
-	; call draw_gsa
-	addi a0, zero, 2
-	addi a1, zero, 1
-	call find_neighbours
+	call update_gsa
+	; ; call draw_gsa
+	; ;addi a0, zero, 2
+	; ;addi a1, zero, 1
+	; ;call find_neighbours
+
+; 	addi sp, zero, CUSTOM_VAR_END ; initialize stack pointer
+; 	call reset_game
+; 	call get_input
+; 	add s0, zero, v0 ; e gets the value from get input as said in the pseudo code
+; 	add s1, zero, zero ; done is supposed to be false thus 0
+; main_loop:
+; 	add a0, zero, v0 ; edgecapture in argument for select action
+; 	call select_action
+; 	call update_state ; same argument as select_action
+; 	call update_gsa
+; 	call mask
+; 	call draw_gsa
+; 	call wait
+; 	call decrement_step
+; 	add s1, zero, v0 ; changes the val of done
+; 	call get_input
+; 	add s0, zero, v0 ; changes the value of e
+; 	beq s1, zero, main_loop ; while the program isn't done keep running
+; 	jmpi main
 	
 
 
@@ -458,10 +480,7 @@ init_state_change:
 
 	cmplti t7, t0, N_SEEDS ; check if b0 < N, t7=1 if true
 	addi t5, zero, N_SEEDS ; register for N_SEEDS
-	;beq t2, t6, init_set_state ; go to INIT if b2=1
-	;beq t3, t6, init_set_state ; go to INIT if b3=1 QUESTION: if same state, still renew state or discard?
-	;beq t4, t6, init_set_state ; go to INIT if b4=1
-	;beq t7, t6, init_set_state ; go to INIT if b0 < N
+
 	beq t0, t5, rand_set_state ; go to RAND if b0=N_SEEDS
 	beq t1, t6, run_set_state ; go to RUN if b1=1
 	
@@ -482,10 +501,6 @@ rand_state_change:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	;beq t0, t6, rand_set_state ; go to RAND if b0=1
-	;beq t2, t6, rand_set_state ; go to RAND if b2=1
-	;beq t3, t6, rand_set_state ; go to RAND if b3=1
-	;beq t4, t6, rand_set_state ; go to RAND if b4=1
 	beq t1, t6, run_set_state ; go to RUN if b1=1
 
 
@@ -505,10 +520,6 @@ run_state_change:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	;beq t0, t6, run_set_state ; go to RUN if b0=1
-	;beq t1, t6, run_set_state ; go to RUN if b1=1
-	;beq t2, t6, run_set_state ; go to RUN if b2=1
-	;beq t4, t6, run_set_state ; go to RUN if b4=1
 	beq t3, t6, init_set_state ; go to INIT if b3=1
 
 
@@ -524,6 +535,7 @@ rand_set_state:
 
 run_set_state:
 	addi t0, zero, RUN ; set t0 to RUN
+	stw t6, PAUSE(zero) ; set PAUSE to 1
 	stw t0, CURR_STATE(zero) ; store RUN in CURR_STATE
 	ret
 
@@ -658,12 +670,12 @@ fate_dead:
 
 
 ; BEGIN:find_neighbours
-find_neighbours: ;; arguments: register a0: x coordinate of examined cell • register a1: y coordinate of examined cell
+find_neighbours: ;; arguments: register a0: x coordinate of examined cell, register a1: y coordinate of examined cell
 	
 
 
 	addi sp, sp, -20 ; put sX and ra to stack
-  	stw s0, 0 (sp)
+  	stw s0, 0 (sp) ; store saved registers to stack
   	stw s1, 4 (sp)
   	stw s2, 8 (sp)
 	stw s3, 12 (sp)
@@ -678,6 +690,7 @@ find_neighbours: ;; arguments: register a0: x coordinate of examined cell • re
 
 	call y_loop
 	add v0, zero, s0 ; put nb neighbours s0 to v0
+	sub v0, v0, v1 ; v0 minus potentially itself
 
 	ldw ra, 16 (sp) ; retrieve sX and ra to stack
 	ldw s3, 12 (sp)
@@ -708,7 +721,7 @@ y_loop:
 	ldw ra, 0 (sp) ; load ra back
   	addi sp, sp, 4
 
-	addi s1, s1, 1 ; increment t0 by 1
+	addi s1, s1, 1 ; increment s1 by 1
 	bne s1, t6, y_loop ; loop while line y+1 is computed
 	ret
 
@@ -727,12 +740,15 @@ x_loop:
 	ldw a0, 0 (sp) ; load a0 back
   	addi sp, sp, 4
 
+
 	srl t0, t3, v0 ; shift right curent line t3 by x coord.
 	and t7, s2, t0 ; and operation with 1 to see if the cell is alive or dead
 
+	add s0, s0, t7 ; increment s0 by 1 if neighbour cell is alive 
+
 	;check for cell_state
-	cmpeqi t0, t4, 0 ; see if current j is 0
-	cmpeqi t1, s1, 0 ; see if current y coord. is 0 
+	cmpeqi t0, t4, 0 ; see if current j is 0 ;
+	cmpeqi t1, s1, 0 ; see if current y coord. is 0 ;
 	add t0, t0, t1 ; add x and y coord.
 	call cell_state_update
 	;end check 
@@ -740,8 +756,7 @@ x_loop:
 	ldw ra, 0 (sp) ; load ra back
   	addi sp, sp, 4
 
-	add s0, s0, t7 ; increment s0 by 1 if neighbour cell is alive 
-
+	
 	addi t4, t4, 1 ; increment t4
 	bne t4, t6, x_loop ; loop while cell x+1 is computed
 	
@@ -752,7 +767,7 @@ op_modulo:
 
 	add v0, zero, a0 ; pass the given x coord. by default
 	addi t2, zero, 12 ; set t2 to 12
-	blt v0, s1, return_eleven ; if given x coord. is -1, then return 11
+	blt v0, s1, return_eleven ; if given x coord. is -1, then return 11 TO CHECK
 	bge v0, t2, return_zero ; if given x coord. is 12, then return 0
 	ret
 
@@ -765,10 +780,21 @@ return_zero:
 	ret
 	
 cell_state_update:
-	cmpeqi t0, t0, 2 ; check if i=0 == true and j=0 == true
-	and t7, t7, t0
-	add v1, zero, t7 ; put 1 if examining cell is alive
+	;cmpeqi t0, t0, 2 ; check if i=0 == true and j=0 == true
+	;and t7, t7, t0 ; check if the examining cell is alive
+	beq t0, 2, set_v1 ; if x=0 and y=0 then go to set_v1
+	;cmpgei v1, t7, 1 ; put 1 if examining cell is alive / set 1 if t7 is bigger or equal to 1
+
 	ret
+
+set_v1:
+	andi t7, t7, 1 ; check if the examining cell is alive
+	cmpeq v1, t7, 1 ; set v1 to 1 if its alive
+	;sub v0, s0, v1 ; nb of neighbors minus itself
+
+	ret
+
+
 
 
 ; END:find_neighbours
@@ -780,40 +806,81 @@ cell_state_update:
 ; BEGIN:update_gsa
 update_gsa: ;;arguments none /return none
 
-ldw t0, PAUSED(zero) ; load value of PAUSED (0=game is paused)
-addi t1, zero, 0 ; y coord. counter
-bne t0, zero, update_row ; update gsa if paused != 0 
-addi t6, zero, 8 ; constant 8
-addi t7, zero, 12 ; constant 12
-ldw t4, GSA_ID(zero) ; load current GSA_ID
-cmpeqi t5, t4, 0 ; invert GSA_ID
-ret
+	addi sp, sp, -24 ; put sX and ra to stack
+  	stw s0, 0 (sp) ; store saved registers to stack
+  	stw s1, 4 (sp)
+  	stw s2, 8 (sp)
+	stw s3, 12 (sp)
+	stw s4, 16 (sp)
+  	stw ra, 20 (sp)
+
+	ldw t0, PAUSE(zero) ; load value of PAUSED (0=game is paused)
+	addi s1, zero, 0 ; y coord. counter
+	addi s2, zero, 8 ; constant 8
+	addi s3, zero, 12 ; constant 12
+	;addi t6, zero, 8 
+	;addi t7, zero, 12 ; constant 12
+
+	bne t0, zero, update_row ; update gsa if paused != 0
+
+	ldw ra, 20 (sp) ; retrieve sX and ra to stack
+	ldw s4, 16 (sp)
+	ldw s3, 12 (sp)
+  	ldw s2, 8 (sp)
+  	ldw s1, 4 (sp)
+  	ldw s0, 0 (sp)
+  	addi sp, sp, 24
+	ret
 
 
 update_row:
-	add t3, zero, zero ; initialize counter for col
-	add t0, zero, zero ; empty register
+	add s0, zero, zero ; initialize counter for col
+	add s4, zero, zero ; initialize computed row for col
+	;add t0, zero, zero ; empty register
 	call update_col
-	add a0, zero, t0 ; put the compuled col. to a0
-	add a1, zero, t1
+	add a0, zero, t0 ; put the computed col. to a0
+	add a1, zero, s1 ; put current row index
 	call set_gsa
-	addi t1, t1, 1
-	bne t1, t6, update_row
+	addi s1, s1, 1 ; increment row index
+	bne s1, s2, update_row ; loop while current y index is 8
+
+	; ldw t4, GSA_ID(zero) ; load current GSA_ID
+	; cmpeqi t5, t4, 0 ; invert GSA_ID
+	; stw t5, GSA_ID(zero) ; load current GSA_ID
+
+	
+	ldw ra, 20 (sp) ; retrieve sX and ra to stack
+	ldw s4, 16 (sp)
+	ldw s3, 12 (sp)
+  	ldw s2, 8 (sp)
+  	ldw s1, 4 (sp)
+  	ldw s0, 0 (sp)
+  	addi sp, sp, 24
+
 	ret
+
 
 update_col:
 	
-	add a1, zero, t1 ; current y coord.
-	add a0, zero, t3 ; current x coord.
+	addi sp, sp, -4 ; decrement stack
+	stw ra, 0(sp)
+	add a1, zero, s1 ; current y coord.
+	add a0, zero, s0 ; current x coord.
 	call find_neighbours
+
 	add a0, zero, v0 ; store find_neighbours's nb lining neighbours
 	add a1, zero, v1 ; store find_neighbours's cell state
 	call cell_fate
-	sll t2, v0, t3 ; shift left the cell_fate value by x coord.
-	or t0, zero, v0 ; or operation and put it in the register
 
-	addi t3, t3, 1
-	bne t3, t7, update_col
+	sll t2, v0, s0 ; shift left the cell_fate value by x coord.
+	or s4, s4, t2 ; or operation and put it in the register - and operation with the computed row until now
+
+	addi s0, s0, 1 ; increment x coord.
+	bne s0, s3, update_col ; loop while x coord = 8
+
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+
 	ret
 
 
@@ -833,11 +900,12 @@ mask: ;;arguments none / return none
 	addi t5, zero, 0 ; loop counter for line coord
 
 loop_mask:
-	ldw s0, 0(t7) ; get mask 0's line 0 at 's0'
+
+	ldw t3, 0(t7) ; get mask 0's line 0 at t3 : HERE
 	add a0, zero, t5 ; put y line coord. to a0
 	call get_gsa
 	add t1, zero, v0 ; store gsa line 0 at t1
-	and t0, s0, t1 ; and operation mask and gsa line
+	and t0, t3, t1 ; and operation mask and gsa line
 	add a0, zero, t0 ; store masked line to a0
 	add a1, zero, t5 ; store line coord.
 	call set_gsa
@@ -853,6 +921,68 @@ loop_mask:
 ; END:mask
 
 
+; BEGIN:get_input
+get_input: ;; no argument / return edgecapture in v0
+	ldw v0, BUTTONS+4(zero) ; load edgecapture into return
+	stw zero, BUTTONS+4(zero) ; clear edge capture
+	ret
+; END:get_input
+
+; BEGIN:decrement_step
+decrement_step: ;; no arguments / return v0 -> 1 if done 0 if not
+	ldw t0, CURR_STATE(zero)
+	ldw t1, PAUSE(zero)
+	ldw t2, CURR_STEP(zero)
+	cmpeqi t0, t0, RUN; checks if the current state is run
+	cmpeqi t1, t1, RUNNING ; checks if the game is running
+	cmpeq t3, t2, zero ; checks if the current step is 0
+	and t4, t0, t1 ; is 1 if the game is running and in the run state
+	and t3, t3, t4 ; if the game is running, is in the run state and the current step is 0 
+	bne t3, zero, base_case ; base case, will return 1
+
+	bne t4, zero, step ; if game running in run state and current step isn't 0
+
+	;; if not any of the previous case it means that state is INIT or RAND thus 
+	add t3, zero, zero ; counter for the loop to set the 7 seg
+	addi t4, zero, 4 ; number of iterations of the loop
+not_run_loop:
+	addi t5, zero, 0xF ; mask to check 4 bits in binary
+	and t1, t2, t5 ; applying mask on number of steps to get SEG[i]
+	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
+	ldw t5, font_data(t1) ; get the number to display in SEG[i]
+	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
+	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
+	srli t2, t2, 4 ; shift right by 4 to be able to isolate next 4 bits
+	addi t3, t3, 1 ; increment counter
+	blt t3, t4, loop_7Seg ; loop 4 times for each SEG 
+	add v0, zero, zero ; return value is 0 because not done
+	ret
+	
+base_case:
+	addi v0, zero, 1 ; return value is one because done
+	ret
+
+step:
+	addi t2, t2, -1 ; decrement number of step
+	add t3, zero, zero ; counter for the loop to set the 7 seg
+	addi t4, zero, 4 ; number of iterations of the loop
+loop_7Seg:
+	addi t5, zero, 0xF ; mask to check 4 bits in binary
+	and t1, t2, t5 ; applying mask on number of steps to get SEG[i]
+	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
+	ldw t5, font_data(t1) ; get the number to display in SEG[i]
+	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
+	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
+	srli t2, t2, 4 ; shift right by 4 to be able to isolate next 4 bits
+	addi t3, t3, 1 ; increment counter
+	blt t3, t4, loop_7Seg ; loop 4 times for each SEG 
+	add v0, zero, zero ; return value is 0 because not done
+	ret 
+
+
+; END:decrement_step
+
+
 
 ; BEGIN:reset_game
 reset_game: ;;arguments none /return none
@@ -864,6 +994,7 @@ reset_game: ;;arguments none /return none
 	stw zero, GSA_ID(zero) ; set GSA_ID to zero
 	stw t0, PAUSE(zero) ; set PAUSE to 1
 	stw t0, SPEED(zero) ; set game speed to 1
+	ret
 	
 ; END:reset_game
 
