@@ -29,6 +29,8 @@
     .equ RUNNING, 0x01
 
 
+
+
 main:
 
 	addi sp, zero, 0x1300
@@ -68,8 +70,12 @@ main:
 	; ; call draw_gsa
 	addi t0, zero, 1
 	stw t0, PAUSE(zero)
+	addi a0, zero, 2
+	addi a1, zero, 0
+
+	call find_neighbours
 	
-	call update_gsa
+	;call update_gsa
 	; ; call draw_gsa
 	; ;addi a0, zero, 2
 	; ;addi a1, zero, 1
@@ -668,7 +674,6 @@ fate_dead:
 
 ; END:cell_fate
 
-
 ; BEGIN:find_neighbours
 find_neighbours: ;; arguments: register a0: x coordinate of examined cell, register a1: y coordinate of examined cell
 	
@@ -691,6 +696,7 @@ find_neighbours: ;; arguments: register a0: x coordinate of examined cell, regis
 	call y_loop
 	add v0, zero, s0 ; put nb neighbours s0 to v0
 	sub v0, v0, v1 ; v0 minus potentially itself
+
 
 	ldw ra, 16 (sp) ; retrieve sX and ra to stack
 	ldw s3, 12 (sp)
@@ -740,7 +746,6 @@ x_loop:
 	ldw a0, 0 (sp) ; load a0 back
   	addi sp, sp, 4
 
-
 	srl t0, t3, v0 ; shift right curent line t3 by x coord.
 	and t7, s2, t0 ; and operation with 1 to see if the cell is alive or dead
 
@@ -782,20 +787,17 @@ return_zero:
 cell_state_update:
 	;cmpeqi t0, t0, 2 ; check if i=0 == true and j=0 == true
 	;and t7, t7, t0 ; check if the examining cell is alive
-	beq t0, 2, set_v1 ; if x=0 and y=0 then go to set_v1
+	beq t0, t6, set_v1 ; if x=0 and y=0 then go to set_v1
 	;cmpgei v1, t7, 1 ; put 1 if examining cell is alive / set 1 if t7 is bigger or equal to 1
 
 	ret
 
 set_v1:
 	andi t7, t7, 1 ; check if the examining cell is alive
-	cmpeq v1, t7, 1 ; set v1 to 1 if its alive
-	;sub v0, s0, v1 ; nb of neighbors minus itself
+	cmpeqi v1, t7, 1 ; set v1 to 1 if its alive
+
 
 	ret
-
-
-
 
 ; END:find_neighbours
 
@@ -948,7 +950,6 @@ decrement_step: ;; no arguments / return v0 -> 1 if done 0 if not
 not_run_loop:
 	addi t5, zero, 0xF ; mask to check 4 bits in binary
 	and t1, t2, t5 ; applying mask on number of steps to get SEG[i]
-	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
 	ldw t5, font_data(t1) ; get the number to display in SEG[i]
 	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
 	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
@@ -969,7 +970,6 @@ step:
 loop_7Seg:
 	addi t5, zero, 0xF ; mask to check 4 bits in binary
 	and t1, t2, t5 ; applying mask on number of steps to get SEG[i]
-	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
 	ldw t5, font_data(t1) ; get the number to display in SEG[i]
 	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
 	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
