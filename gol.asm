@@ -28,8 +28,50 @@
     .equ PAUSED, 0x00
     .equ RUNNING, 0x01
 
+
 main:
-    ;; 
+
+	addi sp, zero, 0x1300
+	addi t0, zero, 0 ; 000000000000
+	add a0, zero, t0
+	addi a1, zero, 0
+	call set_gsa
+	addi t1, zero, 28 ; 000000011100
+	add a0, zero, t1
+	addi a1, zero, 1
+	call set_gsa
+	addi t2, zero, 100 ; 000001100100
+	add a0, zero, t2
+	addi a1, zero, 2
+	call set_gsa
+	addi t3, zero, 812 ; 001100101100
+	add a0, zero, t3
+	addi a1, zero, 3
+	call set_gsa
+	addi t4, zero, 1248 ; 010011100000
+	add a0, zero, t4
+	addi a1, zero, 4
+	call set_gsa
+	addi t5, zero, 1540 ; 011000000100
+	add a0, zero, t5
+	addi a1, zero, 5
+	call set_gsa
+	addi t6, zero, 4 ; 000000000100
+	add a0, zero, t6
+	addi a1, zero, 6
+	call set_gsa
+	addi t7, zero, 4 ; 000000000100
+	add a0, zero, t7
+	addi a1, zero, 7
+	call set_gsa
+
+	; call draw_gsa
+	
+	; call update_gsa
+	; call draw_gsa
+	addi a0, zero, 2
+	addi a1, zero, 1
+	call find_neighbours
 	
 
 
@@ -237,73 +279,33 @@ set_if_1:
 ; BEGIN:random_gsa
 random_gsa: ;  initialize the current GSA to a random state.
 ;;arguments none / return none
+
+	addi sp, sp, -4 ; decrement stack pointer by 4
+	stw ra, 0(sp) ; store return address from main procedure
 	addi t5, zero, 1 ; set t5 to constant 1
-	addi t4, zero, GSA_ID ; get current GSA ID
-	addi t6, zero, 32 ; set t6 to 32 for counter
+	;addi t4, zero, GSA_ID ; get current GSA ID 
+	addi t6, zero, 31 ; set t6 to 31 for counter
 	add t7, zero, zero ; set t7 empty register
-	;beq t4, t5, random_gsa1 ; go to random_gsa1 if current gsa is 1
+	addi t4, zero, 0 ; set counter to 0
+	call loop_random
+	
 
+loop_random:
 
-	call randomizer ; todo : handle STACK, what should I put in STACK exactly? Cuz randomizer will return to here. Pop address? Make this into loop. test.
+	call randomizer ;
 	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 0 ; store 0 for arguemnt for set_gsa
+	add a1, zero, t4 ; store 0 for arguemnt for set_gsa
 	call set_gsa ; set gsa line 0 to this random element generated
 
-	addi t6, zero, 32 ; set t6 to 32 for counter
+	addi t6, zero, 31 ; set t6 to 31 for counter
 	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 1 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
-
-	addi t6, zero, 32 ; set t6 to 32 for counter
-	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 2 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
-
-	addi t6, zero, 32 ; set t6 to 32 for counter
-	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 3 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
-
-	addi t6, zero, 32 ; set t6 to 32 for counter
-	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 4 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
-
-	addi t6, zero, 32 ; set t6 to 32 for counter
-	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 5 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
-
-	addi t6, zero, 32 ; set t6 to 32 for counter
-	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 6 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
-
-	addi t6, zero, 32 ; set t6 to 32 for counter
-	add t7, zero, zero ; set t7 empty register
-
-	call randomizer ; todo : STACK
-	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
-	addi a1, zero, 7 ; store 0 for arguemnt for set_gsa
-	call set_gsa ; set gsa line 0 to this random element generated
+	addi t2, zero, 1 ; set t2 to constant 8 TODO: change the 1 to 8 later, it was just for testing
+	addi t4, t4, 1 ; increment counter
+	bne t4, t2, loop_random ; loop if not all 8 lines are generated yet
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+	
+	ret
 
 randomizer:
 	ldw t0, RANDOM_NUM(zero) ; load random number from memory
@@ -313,10 +315,9 @@ randomizer:
 	slli t7, t7, 1 ; shift left
 	or t7, t7, t3 ; store t3 at this last bit 
 	bne t6, zero, randomizer ; do while all 32 random bits are generated
-	ret ; go back to random_gsa when generating random line finished TODO: check if correct
+	ret ; go back to random_gsa when generating random line finished
 	
 ; END:random_gsa
-
 
 
 
@@ -332,13 +333,13 @@ increment_speed:
 	cmplti t3, t0, MAX_SPEED ; set t3 to 1 if current speed < MAX_SPEED else 0
 	add t0, t0, t3 ; add current speed and t3
 	stw t0, SPEED(zero) ; store computed speed to SPEED
-	; ret - QUESTION: shouldn't ret right? Since no need to go back.
+	ret
 
 decrement_speed:
 	cmpgei t4, t0, 2 ; set t4 to 1 if current speed ≥ 2 else 0
 	sub t0, t0, t4 ; sub current speed and t4
 	stw t0, SPEED(zero) ; store computed speed to SPEED
-	; ret
+	ret
 	
 ; END:change_speed
 
@@ -349,12 +350,14 @@ pause_game: ;;arguments none /return none
 	add t0, zero, t3 ; set t0 to current PAUSE value
 	cmpeqi t1, t0, 0 ; set t1 to 1 if PAUSE is 0
 	stw t1, PAUSE(zero) ; store t1 at PAUSE
+	ret
 
 ; END:pause_game	
 
 
 ; BEGIN:change_steps
 change_steps: ;;arguments register a0(units), a1(tens), a2(hundreds) / return none
+
 	ldw t3, CURR_STEP(zero) ; load CURR_STEP value
 	add t5, zero, t3 ; store CURR_STEP to t5
 
@@ -364,10 +367,11 @@ change_steps: ;;arguments register a0(units), a1(tens), a2(hundreds) / return no
 	or t0, t0, a1 ; store a1(tens) value
 	slli t0, t0, 4 ; shift 4
 	or t0, t0, a0 ; store a0(units) value
-	slli t0, t0, 4 ; shift 4
 	add t5, t5, t0 ; add CURR_STEP and the input values
 
 	stw t5, CURR_STEP(zero) ; store computed value to CURR_STEP
+
+	ret
 
 ; END:change_steps	
 
@@ -375,39 +379,50 @@ change_steps: ;;arguments register a0(units), a1(tens), a2(hundreds) / return no
 
 ; BEGIN:increment_seed
 increment_seed: ;;arguments none / return none
-	; addi sp, sp, -4 ; decrement stack pointer by 4
-	; stw ra, 0(sp) ; store return address from main procedure
-	ldw t0, CURR_STATE(zero) ; load current state to t3
-	; add t0, zero, t3 ; set t0 to current game state
-	;beq t0, INIT, init_increment
-	;beq t0, RAND, rand_increment
+	addi sp, sp, -4 ; decrement stack pointer by 4
+	stw ra, 0(sp) ; store return address from main procedure
+	ldw t0, CURR_STATE(zero) ; load current state to t0
+	addi t1, zero, INIT
+	addi t2, zero, RAND
+	beq t0, t1, init_increment
+	beq t0, t2, rand_increment
 
 init_increment:
-	ldw t1, SEED(zero) ; load current SEED TODO: variable SEED is 0-4? => yes
+	ldw t1, SEED(zero) ; load current SEED 
 	addi t3, zero, 3 ; set t3 to constant 3
-	addi t4, zero, 4 ; set t3 to constant 4
+	addi t4, zero, 4 ; set t4 to constant 4
 	beq t1, t3, init_increment_3 ; cf. edstream
 	beq t1, t4, init_increment_4 ; cf. edstream
 	addi t1, t1, 1 ; increment game seed by 1
 	stw t1, SEED(zero); store incremented seed to SEED
-	call mask ; QUESTION: this will take charge in copying this seed to current GSA right?
-	; pop
-	; ret
+	call mask ; QUESTION&TODOthis will take charge in copying this seed to current GSA right?
+	
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+	ret
 
 init_increment_3:
 	addi t1, t1, 1 ; increment by 1
 	stw t1, SEED(zero) ; store incremented seed to SEED
 	call random_gsa
-	; pop return address
-	; ret
-	; TODO: "break" how? cuz ret is going to return to the called place no?
+	
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+	ret
 
 init_increment_4:
 	call random_gsa
 
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+	ret
+
 rand_increment:
 	call random_gsa
 
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+	ret
 
 ; END:increment_seed	
 
@@ -426,7 +441,9 @@ update_state: ;;arguments register a0: edgecapture  / return none
 init_state_change:
 	add t5, zero, a0 ; copy a0
 	addi t6, zero, 1 ; set constant 1
-	and t0, t5, t6 ; mask and get b0 --QUESTION : Should I set t0 with a0's last bit or SEED (since it is updated at each press of button 0)
+	;and t0, t5, t6 ; mask and get b0 
+	ldw t0, SEED(zero) ; set t0 to the current value of SEED
+	
 	srli t5, t5, 1 ; shift right by 1
 	and t1, t5, t6 ; mask and get b1 
 	srli t5, t5, 1 ; shift right by 1
@@ -441,10 +458,10 @@ init_state_change:
 
 	cmplti t7, t0, N_SEEDS ; check if b0 < N, t7=1 if true
 	addi t5, zero, N_SEEDS ; register for N_SEEDS
-	beq t2, t6, init_set_state ; go to INIT if b2=1
-	beq t3, t6, init_set_state ; go to INIT if b3=1
-	beq t4, t6, init_set_state ; go to INIT if b4=1
-	beq t7, t6, init_set_state ; go to INIT if b0 < N
+	;beq t2, t6, init_set_state ; go to INIT if b2=1
+	;beq t3, t6, init_set_state ; go to INIT if b3=1 QUESTION: if same state, still renew state or discard?
+	;beq t4, t6, init_set_state ; go to INIT if b4=1
+	;beq t7, t6, init_set_state ; go to INIT if b0 < N
 	beq t0, t5, rand_set_state ; go to RAND if b0=N_SEEDS
 	beq t1, t6, run_set_state ; go to RUN if b1=1
 	
@@ -452,7 +469,9 @@ init_state_change:
 rand_state_change:
 	add t5, zero, a0 ; copy a0
 	addi t6, zero, 1 ; set constant 1
-	and t0, t5, t6 ; mask and get b0
+	;and t0, t5, t6 ; mask and get b0 
+	ldw t0, SEED(zero) ; set t0 to the current value of SEED
+	
 	srli t5, t5, 1 ; shift right by 1
 	and t1, t5, t6 ; mask and get b1 
 	srli t5, t5, 1 ; shift right by 1
@@ -463,17 +482,19 @@ rand_state_change:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	beq t0, t6, rand_set_state ; go to RAND if b0=1
-	beq t2, t6, rand_set_state ; go to RAND if b2=1
-	beq t3, t6, rand_set_state ; go to RAND if b3=1
-	beq t4, t6, rand_set_state ; go to RAND if b4=1
+	;beq t0, t6, rand_set_state ; go to RAND if b0=1
+	;beq t2, t6, rand_set_state ; go to RAND if b2=1
+	;beq t3, t6, rand_set_state ; go to RAND if b3=1
+	;beq t4, t6, rand_set_state ; go to RAND if b4=1
 	beq t1, t6, run_set_state ; go to RUN if b1=1
 
 
 run_state_change:
 	add t5, zero, a0 ; copy a0
 	addi t6, zero, 1 ; set constant 1
-	and t0, t5, t6 ; mask and get b0
+	;and t0, t5, t6 ; mask and get b0 
+	ldw t0, SEED(zero) ; set t0 to the current value of SEED
+	
 	srli t5, t5, 1 ; shift right by 1
 	and t1, t5, t6 ; mask and get b1 
 	srli t5, t5, 1 ; shift right by 1
@@ -484,25 +505,27 @@ run_state_change:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	beq t0, t6, run_set_state ; go to RUN if b0=1
-	beq t1, t6, run_set_state ; go to RUN if b1=1
-	beq t2, t6, run_set_state ; go to RUN if b2=1
-	beq t4, t6, run_set_state ; go to RUN if b4=1
+	;beq t0, t6, run_set_state ; go to RUN if b0=1
+	;beq t1, t6, run_set_state ; go to RUN if b1=1
+	;beq t2, t6, run_set_state ; go to RUN if b2=1
+	;beq t4, t6, run_set_state ; go to RUN if b4=1
 	beq t3, t6, init_set_state ; go to INIT if b3=1
 
 
 init_set_state:
 	addi t0, zero, INIT ; set t0 to INIT
 	stw t0, CURR_STATE(zero) ; store INIT in CURR_STATE
-	call reset_game
+	call reset_game ; QUESTION: here jump or call?
 
 rand_set_state:
 	addi t0, zero, RAND ; set t0 to RAND
 	stw t0, CURR_STATE(zero) ; store RAND in CURR_STATE
+	ret
 
 run_set_state:
 	addi t0, zero, RUN ; set t0 to RUN
 	stw t0, CURR_STATE(zero) ; store RUN in CURR_STATE
+	ret
 
 ; END:update_state
 
@@ -535,11 +558,11 @@ init_select_action:
 	; value of b4 b3 b2 b1 b0 stored
 
 	beq t0, t6, increment_seed ; generate new GSA
-	beq t1, t6, update_state ; go to RUN
+	;beq t1, t6, update_state ; go to RUN
 	beq t2, t6, change_steps ; if button 2 is pressed, change steps
 	beq t3, t6, change_steps ; if button 3 is pressed, change steps
 	beq t4, t6, change_steps ; if button 4 is pressed, change steps
-
+	ret
 
 rand_select_action:
 
@@ -564,10 +587,11 @@ rand_select_action:
 
 	
 	beq t0, t6, random_gsa ; generate new GSA
-	beq t1, t6, update_state ; go to RUN 
+	;beq t1, t6, update_state ; go to RUN 
 	beq t2, t6, change_steps ; if button 2 is pressed, change steps
 	beq t3, t6, change_steps ; if button 3 is pressed, change steps
 	beq t4, t6, change_steps ; if button 4 is pressed, change steps
+	ret
 
 run_select_action:
 	add t0, zero, zero ; initialize registers to 0 
@@ -589,7 +613,7 @@ run_select_action:
 	and t4, t5, t6 ; mask and get b4
 	; value of b4 b3 b2 b1 b0 stored
 
-	beq t0, t6, pause_game ; if button 0 pressed, call pause_game TODO: beq or call? 
+	beq t0, t6, pause_game ; if button 0 pressed, call pause_game
 	addi a0, zero, 0 ; set a0 to 0, increment
 	; store return address
 	beq t1, t6, change_speed ; if button 1 pressed,increment speed by 1
@@ -597,8 +621,9 @@ run_select_action:
 
 	addi a0, zero, 1 ; set a0 to 1, decrement
 	beq t2, t6, change_speed ; if button 2 pressed, decrement speed by 1
-	beq t3, t6, reset_game ; if button 3 pressed, reset_game
-	beq t4, t6, random_gsa ; if button 4 pressed, call randmo gsa--explanation 2.4.3 and state diagram difference, random state or come back to run? => Stay in RUN but call random_gsa
+	;beq t3, t6, reset_game ; if button 3 pressed, reset_game
+	beq t4, t6, random_gsa ; if button 4 pressed, call random gsa
+	ret
 
 
 ; END:select_action
@@ -607,201 +632,226 @@ run_select_action:
 
 ; BEGIN:cell_fate
 cell_fate: ;; a0: number of live neighbouring cells a1: examined cell state /return v0: 1 if the cell is alive 0 otherwise
-	add t3, zero, a0 ; set t0 to nb of live neighbouring cells
+	add t3, zero, a0 ; set t3 to nb of live neighbouring cells
 	addi t4, zero, 1 ; set t4 to constant 1
-	beq a1, zero, fate_alive
-	beq a1, t4, fate_dead
+	beq a1, t4, fate_alive
+	beq a1, zero, fate_dead
 
 fate_alive:
 	add t1, zero, zero ; set t1 to 0
-	cmplti t1, t3, 2 ; [UNDERPOPULATION] set t1 to 1 if cell has strictly less than 2 neighbour
-	cmpeqi t1, t1, 0 ; invert result (cuz we want t1 to be 0 if strictly less than 2 neighbour)
-	cmpgei t1, t3, 4 ; [OVERPOPULATION] set t1 to 1 if cell has ≥4 neighbours
-	cmpeqi t1, t1, 0 ; invert result (cuz we want t1 to be 0 if strictly more than 3 neighbour) 
+	;cmplti t1, t3, 2 ; [UNDERPOPULATION] set t1 to 1 if cell has strictly less than 2 neighbour
+	;cmpeqi t1, t1, 0 ; invert result (cuz we want t1 to be 0 if strictly less than 2 neighbour)
+	;cmpgei t1, t3, 4 ; [OVERPOPULATION] set t1 to 1 if cell has ≥4 neighbours
+	;cmpeqi t1, t1, 0 ; invert result (cuz we want t1 to be 0 if strictly more than 3 neighbour) 
 	cmpeqi t1, t3, 2 ; [STATIS] cell remains 1 if it has 2 neighbours
-	cmpeqi t1, t3, 3 ; [STATIS] cell remains 1 if it has 3 neighbours
+	cmpeqi t2, t3, 3 ; [STATIS] cell remains 1 if it has 3 neighbours
+	or t1, t1, t2 ; set 1 if t1 or t2 true
 	add v0, zero, t1 ; set v0 to t1's value
-	;TODO: Histoire de function return and stack
+	ret
 
 fate_dead:
-	cmpeqi t2, t3, 3
-	add v0, zero, t2
+	cmpeqi t2, t3, 3 ; check if nb of neighbours is exactly 3
+	add v0, zero, t2 ; set v0 to t2's value 
+	ret
 
 ; END:cell_fate
 
 
-
 ; BEGIN:find_neighbours
-find_neighbours:
-	add t0, zero, a0 ; set t0 to x coord
-	add t1, zero, a1 ; set t1 to y coord
+find_neighbours: ;; arguments: register a0: x coordinate of examined cell • register a1: y coordinate of examined cell
+	
 
-	;get current gsa
-	;x,y : t0*8 + t1
 
-	add t3, zero, zero ; set counter to 0
-	addi t5, zero, 1 ; set t5 to constant 1
+	addi sp, sp, -20 ; put sX and ra to stack
+  	stw s0, 0 (sp)
+  	stw s1, 4 (sp)
+  	stw s2, 8 (sp)
+	stw s3, 12 (sp)
+  	stw ra, 16 (sp)
 
-	;todo: limit cases when 0,0
+	add s0, zero, zero ; empty s0
+	addi s1, zero, -1 ; set t0 to constant -1
+	addi s2, zero, 1 ; set t0 to constant 1
+	add s3, zero, zero ; set s3 empty
 
-	;===== line y-1 =====
-	sub t1, t1, t5 ; y coord. -1
-	andi t1, t1, 7 ; mask with ..00111 with t1, mod 8 operation
-	add a0, zero, t1 ; put y coord to a0
+	addi t6, zero, 2 ; set t6 to constant 2
+
+	call y_loop
+	add v0, zero, s0 ; put nb neighbours s0 to v0
+
+	ldw ra, 16 (sp) ; retrieve sX and ra to stack
+	ldw s3, 12 (sp)
+  	ldw s2, 8 (sp)
+  	ldw s1, 4 (sp)
+  	ldw s0, 0 (sp)
+  	addi sp, sp, 20
+	ret
+
+y_loop:
+	addi sp, sp, -4
+	stw ra, 0 (sp) ; put ra to stack
+
+	add s3, s1, a1 ; put current y coordinate+i to s3
+	andi s3, s3, 7 ; modulo 8 operation
+	addi sp, sp, -4
+	stw a0, 0 (sp) ; put a0 to stack
+	add a0, zero, s3 ; put current line coord. to a0
 	call get_gsa
-	add t1, zero, v0 ; store gsa line at y coord.
+	add t3, zero, v0 ; get current gsa line
+	addi t4, zero, -1 ; set t4 to constant -1
+	ldw a0, 0 (sp) ; load a0 back
+  	addi sp, sp, 4
 
-	; o - - 
-	; - x - 
-	; - - - 
+	
+	call x_loop
 
-	sub t4, t0, t5 ; x coord.-1
-	srl t1, t1, t4 ; shift right the line y by x-1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north west, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
+	ldw ra, 0 (sp) ; load ra back
+  	addi sp, sp, 4
 
-	; - o - 
-	; - x - 
-	; - - - 
+	addi s1, s1, 1 ; increment t0 by 1
+	bne s1, t6, y_loop ; loop while line y+1 is computed
+	ret
 
-	srli t1, t1, 1 ; shift right the line y by 1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
+x_loop:
+	addi sp, sp, -4
+	stw ra, 0 (sp) ; put ra to stack
 
-	; - - o 
-	; - x - 
-	; - - - 
+	add t5, a0, t4 ; t5 = x + j
 
-	srli t1, t1, 1 ; shift right the line y by 1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north east, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
+	addi sp, sp, -4
+	stw a0, 0 (sp) ; put a0 to stack
 
+	add a0, zero, t5 ; pass t5 to argument to op_modulo
+	call op_modulo
 
-	; ===== line y =====
-	andi t1, a1, 7 ; mask with ..00111 with t1, mod 8 operation
-	add a0, zero, t1 ; put y coord to a0
-	call get_gsa
-	add t1, zero, v0 ; store gsa line at y coord.
+	ldw a0, 0 (sp) ; load a0 back
+  	addi sp, sp, 4
 
-	; - - - 
-	; o x - 
-	; - - - 
+	srl t0, t3, v0 ; shift right curent line t3 by x coord.
+	and t7, s2, t0 ; and operation with 1 to see if the cell is alive or dead
 
-	sub t4, t0, t5 ; x coord.-1
-	srl t1, t1, t4 ; shift right the line y by x-1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north west, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
+	;check for cell_state
+	cmpeqi t0, t4, 0 ; see if current j is 0
+	cmpeqi t1, s1, 0 ; see if current y coord. is 0 
+	add t0, t0, t1 ; add x and y coord.
+	call cell_state_update
+	;end check 
 
-	; - - - 
-	; - x o 
-	; - - - 
+	ldw ra, 0 (sp) ; load ra back
+  	addi sp, sp, 4
 
-	srli t1, t1, 2 ; shift right the line y by 1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north east, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
+	add s0, s0, t7 ; increment s0 by 1 if neighbour cell is alive 
 
+	addi t4, t4, 1 ; increment t4
+	bne t4, t6, x_loop ; loop while cell x+1 is computed
+	
+	ret
+	
 
+op_modulo:
 
+	add v0, zero, a0 ; pass the given x coord. by default
+	addi t2, zero, 12 ; set t2 to 12
+	blt v0, s1, return_eleven ; if given x coord. is -1, then return 11
+	bge v0, t2, return_zero ; if given x coord. is 12, then return 0
+	ret
 
+return_eleven:
+	addi v0, zero, 11 ; put 11 to return value
+	ret
 
-	;===== line y+1 =====
-	addi t1, a1, 1 ; y coord. + 1
-	andi t1, t1, 7 ; mask with ..00111 with t1, mod 8 operation
-	add a0, zero, t1 ; put y coord to a0
-	call get_gsa
-	add t1, zero, v0 ; store gsa line at y coord.
+return_zero:
+	addi v0, zero, 0 ; put 0 to return value
+	ret
+	
+cell_state_update:
+	cmpeqi t0, t0, 2 ; check if i=0 == true and j=0 == true
+	and t7, t7, t0
+	add v1, zero, t7 ; put 1 if examining cell is alive
+	ret
 
-	; - - - 
-	; - x - 
-	; o - - 
-
-	sub t4, t0, t5 ; x coord.-1
-	srl t1, t1, t4 ; shift right the line y by x-1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north west, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
-
-	; - - - 
-	; - x - 
-	; - o - 
-
-	srli t1, t1, 1 ; shift right the line y by 1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
-
-	; - - - 
-	; - x - 
-	; - - o 
-
-	srli t1, t1, 1 ; shift right the line y by 1
-	andi t5, t1, 1 ; mask with 1 to get the last bit
-	cmpeqi t0, t5, 1 ; check north east, set t0 to 1 if the cell is alive, else 0
-	add t3, zero, t0 ; update counter
-
-	add v0, zero, t3 ; return number of living neighbours
-	add v0, zero, a0 ; stock v0 to a0 to pass to cell_fate
-	call cell_fate
-	add v1, zero, v0; cell_fate of the cell at given coord.
 
 ; END:find_neighbours
+
+
+
+
 		
 ; BEGIN:update_gsa
 update_gsa: ;;arguments none /return none
+
+ldw t0, PAUSED(zero) ; load value of PAUSED (0=game is paused)
+addi t1, zero, 0 ; y coord. counter
+bne t0, zero, update_row ; update gsa if paused != 0 
+addi t6, zero, 8 ; constant 8
+addi t7, zero, 12 ; constant 12
+ldw t4, GSA_ID(zero) ; load current GSA_ID
+cmpeqi t5, t4, 0 ; invert GSA_ID
+ret
+
+
+update_row:
+	add t3, zero, zero ; initialize counter for col
+	add t0, zero, zero ; empty register
+	call update_col
+	add a0, zero, t0 ; put the compuled col. to a0
+	add a1, zero, t1
+	call set_gsa
+	addi t1, t1, 1
+	bne t1, t6, update_row
+	ret
+
+update_col:
+	
+	add a1, zero, t1 ; current y coord.
+	add a0, zero, t3 ; current x coord.
+	call find_neighbours
+	add a0, zero, v0 ; store find_neighbours's nb lining neighbours
+	add a1, zero, v1 ; store find_neighbours's cell state
+	call cell_fate
+	sll t2, v0, t3 ; shift left the cell_fate value by x coord.
+	or t0, zero, v0 ; or operation and put it in the register
+
+	addi t3, t3, 1
+	bne t3, t7, update_col
+	ret
+
 
 ; END:update_gsa
 
 
 ; BEGIN:mask
-mask: ;;arguments none /return none
-	; ldw t0, SEED(zero) ; load the game's seed TODO: is it 0-4?
-	; beq t0, 0, apply_mask1
-	; beq t0, 1, apply_mask2
-	; beq t0, 2, apply_mask3
-	; beq t0, 3, apply_mask4
-	; beq t0, 4, apply_mask5
+mask: ;;arguments none / return none
 
-	addi t4, zero, 7 ; constant 7
+	addi sp, sp, -4 ; decrement stack pointer by 4
+	stw ra, 0(sp) ; store return address from main procedure
 
+	ldw t0, SEED(zero) ; load current seed
+	slli t0, t0, 2 ; multiply by 4
+	ldw t7, MASKS(t0) ; get address of MASK[SEED]
+	addi t4, zero, 8 ; constant 7
+	addi t5, zero, 0 ; loop counter for line coord
 
-
-apply_mask0:
-	addi t5, zero, 0 ; loop counter for line coord.
-	slli t3, t5, 2 ; multiply by 4 
-	;ldw t0, mask0+t3(zero) ; get mask 0's line 0 TODO: how to use loop and update memory address?
-	;addi a0, zero, t5 ; put 0 to a0
+loop_mask:
+	ldw s0, 0(t7) ; get mask 0's line 0 at 's0'
+	add a0, zero, t5 ; put y line coord. to a0
 	call get_gsa
 	add t1, zero, v0 ; store gsa line 0 at t1
-	and t0, t0, t1 ; and operation mask and gsa line
+	and t0, s0, t1 ; and operation mask and gsa line
 	add a0, zero, t0 ; store masked line to a0
-	;addi a1, zero, t5 ; store line coord.
-	call set_gsa ; TODO : set gsa or update gsa? Modify current or next gsa => Edstreem says current
+	add a1, zero, t5 ; store line coord.
+	call set_gsa
 	addi t5, t5, 1 ; update counter by 1
-	bne t4, t5, apply_mask0
-
-apply_mask1:
-apply_mask2:
-apply_mask3:
-apply_mask4:
-
-
-	; ldw t1, mask1+4(zero)
-	; ldw t2, SEED+8(zero)
-	; ldw t3, SEED+12(zero)
-	; ldw t4, SEED+16(zero)
-	; ldw t5, SEED+20(zero)
-	; ldw t6, SEED+24(zero)
-	; ldw t7, SEED+28(zero)
-
-
-
+	addi t7, t7, 4 ; add 4 at line coord. to get address
+	bne t4, t5, loop_mask
+	
+	ldw ra, 0(sp) ; retrieve return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
+	
+	ret
 
 ; END:mask
+
 
 
 ; BEGIN:reset_game
