@@ -67,16 +67,16 @@ main:
 	addi a1, zero, 7
 	call set_gsa
 
-	; ; call draw_gsa
+	call draw_gsa
 	addi t0, zero, 1
 	stw t0, PAUSE(zero)
-	addi a0, zero, 2
-	addi a1, zero, 0
+	;addi a0, zero, 2
+	;addi a1, zero, 0
 
-	call find_neighbours
+	;call find_neighbours
 	
-	;call update_gsa
-	; ; call draw_gsa
+	call update_gsa
+	call draw_gsa
 	; ;addi a0, zero, 2
 	; ;addi a1, zero, 1
 	; ;call find_neighbours
@@ -819,7 +819,7 @@ update_gsa: ;;arguments none /return none
 	ldw t0, PAUSE(zero) ; load value of PAUSED (0=game is paused)
 	addi s1, zero, 0 ; y coord. counter
 	addi s2, zero, 8 ; constant 8
-	addi s3, zero, 12 ; constant 12
+	addi s3, zero, 12 ; constant 12 ; to change to 12 later
 	;addi t6, zero, 8 
 	;addi t7, zero, 12 ; constant 12
 
@@ -840,7 +840,7 @@ update_row:
 	add s4, zero, zero ; initialize computed row for col
 	;add t0, zero, zero ; empty register
 	call update_col
-	add a0, zero, t0 ; put the computed col. to a0
+	add a0, zero, s4 ; put the computed col. to a0
 	add a1, zero, s1 ; put current row index
 	call set_gsa
 	addi s1, s1, 1 ; increment row index
@@ -877,11 +877,11 @@ update_col:
 	sll t2, v0, s0 ; shift left the cell_fate value by x coord.
 	or s4, s4, t2 ; or operation and put it in the register - and operation with the computed row until now
 
-	addi s0, s0, 1 ; increment x coord.
-	bne s0, s3, update_col ; loop while x coord = 8
-
 	ldw ra, 0(sp) ; retreive return address to main procedure from stack
 	addi sp, sp, 4 ; increment stack pointer by 4
+
+	addi s0, s0, 1 ; increment x coord.
+	bne s0, s3, update_col ; loop while x coord = 8
 
 	ret
 
