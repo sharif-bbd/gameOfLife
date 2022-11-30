@@ -34,35 +34,35 @@
 main:
 
 	addi sp, zero, 0x1300
-	addi t0, zero, 0 ; 000000000000
+	addi t0, zero, 0b000000000000 ; 000000000000
 	add a0, zero, t0
 	addi a1, zero, 0
 	call set_gsa
-	addi t1, zero, 28 ; 000000011100
+	addi t1, zero, 0b000000011100 ; 000000011100
 	add a0, zero, t1
 	addi a1, zero, 1
 	call set_gsa
-	addi t2, zero, 100 ; 000001100100
+	addi t2, zero, 0b000001100100 ; 000001100100
 	add a0, zero, t2
 	addi a1, zero, 2
 	call set_gsa
-	addi t3, zero, 812 ; 001100101100
+	addi t3, zero, 0b001100101100 ; 001100101100
 	add a0, zero, t3
 	addi a1, zero, 3
 	call set_gsa
-	addi t4, zero, 1248 ; 010011100000
+	addi t4, zero, 0b010011100000 ; 010011100000
 	add a0, zero, t4
 	addi a1, zero, 4
 	call set_gsa
-	addi t5, zero, 1540 ; 011000000100
+	addi t5, zero, 0b011000000100 ; 011000000100
 	add a0, zero, t5
 	addi a1, zero, 5
 	call set_gsa
-	addi t6, zero, 4 ; 000000000100
+	addi t6, zero, 0b000000000100 ; 000000000100
 	add a0, zero, t6
 	addi a1, zero, 6
 	call set_gsa
-	addi t7, zero, 4 ; 000000000100
+	addi t7, zero, 0b000000000100 ; 000000000100
 	add a0, zero, t7
 	addi a1, zero, 7
 	call set_gsa
@@ -70,13 +70,15 @@ main:
 	call draw_gsa
 	addi t0, zero, 1
 	stw t0, PAUSE(zero)
-	;addi a0, zero, 2
-	;addi a1, zero, 0
+	addi a0, zero, 6
+	addi a1, zero, 3
+	call random_gsa
 
 	;call find_neighbours
 	
-	call update_gsa
+	;call update_gsa
 	call draw_gsa
+	add t0, zero, zero
 	; ;addi a0, zero, 2
 	; ;addi a1, zero, 1
 	; ;call find_neighbours
@@ -184,17 +186,17 @@ loop: ;starting the loop
 ; BEGIN:get_gsa
 get_gsa: ;; argument a0(y coord for gsa line 0≤y≤7) / return v0(gsa line at y coord)
 	addi t0, zero, 1 ; init var to 1
-	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
+	ldw t2, GSA_ID(zero) ; store gsa id in a register to use it
 	slli t1, a0, 2 ; multiply y by 4
 	beq t2, t0, get_1 ; branch if gsa 1 is the current
 	
 get_0: ;if gsa_0 is the curr then gsa_1 is the next
-	ldw v0, GSA1(t1) ; load the gsa at line y into v0 from gsa_1
+	ldw v0, GSA0(t1) ; load the gsa at line y into v0 from gsa_1
 	ret 
 
 
 get_1: ; if gsa_1 is the current then gsa_0 is the next
-	ldw v0, GSA0(t1) ; load the gsa at line y into v0 from gsa_0
+	ldw v0, GSA1(t1) ; load the gsa at line y into v0 from gsa_0
 	ret
 
 ; END:get_gsa
@@ -206,16 +208,16 @@ get_1: ; if gsa_1 is the current then gsa_0 is the next
 ; BEGIN:set_gsa
 set_gsa: ;;arguments a0(GSA line), a1(y-coord to insert line at)/ return none
 	addi t0, zero, 1 ; init var to 1
-	addi t2 , zero, GSA_ID ; store gsa id in a register to use it
+	ldw t2, GSA_ID(zero) ; store gsa id in a register to use it
 	slli t1, a1, 2 ; multiply y by 4
 	beq t2, t0, set_1 ; branch if gsa 1 is the current
 	
 set_0: ;if gsa_0 is the curr then gsa_1 is the next
-	stw a0, GSA1(t1) ; store the line at coord y in gsa_1
+	stw a0, GSA0(t1) ; store the line at coord y in gsa_1
 	ret 
 
 set_1: ; if gsa_1 is the current then gsa_0 is the next
-	stw a0, GSA0(t1) ; store the line at coord y in gsa_0
+	stw a0, GSA1(t1) ; store the line at coord y in gsa_0
 	ret	
 ; END:set_gsa
 
@@ -311,8 +313,7 @@ random_gsa: ;  initialize the current GSA to a random state.
 	addi sp, sp, -4 ; decrement stack pointer by 4
 	stw ra, 0(sp) ; store return address from main procedure
 	addi t5, zero, 1 ; set t5 to constant 1
-	;addi t4, zero, GSA_ID ; get current GSA ID 
-	addi t6, zero, 31 ; set t6 to 31 for counter
+	addi t6, zero, N_GSA_COLUMNS ; set t6 to 12 for counter
 	add t7, zero, zero ; set t7 empty register
 	addi t4, zero, 0 ; set counter to 0
 	call loop_random
@@ -320,14 +321,14 @@ random_gsa: ;  initialize the current GSA to a random state.
 
 loop_random:
 
-	call randomizer ;
+	call randomizer
 	add a0, zero, t7 ; store generated t7 at the argument for set_gsa
 	add a1, zero, t4 ; store 0 for arguemnt for set_gsa
 	call set_gsa ; set gsa line 0 to this random element generated
 
-	addi t6, zero, 31 ; set t6 to 31 for counter
+	addi t6, zero, N_GSA_COLUMNS ; set t6 to 12 for counter
 	add t7, zero, zero ; set t7 empty register
-	addi t2, zero, 1 ; set t2 to constant 8 TODO: change the 1 to 8 later, it was just for testing
+	addi t2, zero, 8 ; set t2 to constant 8 TODO: change the 1 to 8 later, it was just for testing
 	addi t4, t4, 1 ; increment counter
 	bne t4, t2, loop_random ; loop if not all 8 lines are generated yet
 	ldw ra, 0(sp) ; retreive return address to main procedure from stack
@@ -338,8 +339,8 @@ loop_random:
 randomizer:
 	ldw t0, RANDOM_NUM(zero) ; load random number from memory
 	sub t6, t6, t5 ; decrement counter
-	and t1, t5, t0 ; and operation to get last bit
-	andi t3, t1, 1 ; mod 2 operation, t3 is the generated 0/1
+	;and t1, t5, t0 ; and operation to get last bit
+	andi t3, t0, 1 ; mod 2 operation, t3 is the generated 0/1
 	slli t7, t7, 1 ; shift left
 	or t7, t7, t3 ; store t3 at this last bit 
 	bne t6, zero, randomizer ; do while all 32 random bits are generated
@@ -412,8 +413,18 @@ increment_seed: ;;arguments none / return none
 	ldw t0, CURR_STATE(zero) ; load current state to t0
 	addi t1, zero, INIT
 	addi t2, zero, RAND
+
+	;addi t5, zero, 1; constant 1
+
+	;ldw t3, SEED(zero) ; load current SEED 
+	;addi t4, zero, N_SEEDS ; store N_SEEDS
+	;sub t4, t4, t5 ; t4 = N_SEEDS -1
+	;blt t3, N_SEEDS-1, init_increment ; go to init_increment if less than N_SEEDS-1
+	;beq t3, N_SEEDS-1, rand_increment ; go to init_increment if current seed = N_SEEDS-1
+
 	beq t0, t1, init_increment
 	beq t0, t2, rand_increment
+	
 
 init_increment:
 	ldw t1, SEED(zero) ; load current SEED 
@@ -430,8 +441,8 @@ init_increment:
 	ret
 
 init_increment_3:
-	addi t1, t1, 1 ; increment by 1
-	stw t1, SEED(zero) ; store incremented seed to SEED
+	addi t2, zero, N_SEEDS
+	stw t2, SEED(zero); store N_SEED to SEED
 	call random_gsa
 	
 	ldw ra, 0(sp) ; retreive return address to main procedure from stack
@@ -446,6 +457,7 @@ init_increment_4:
 	ret
 
 rand_increment:
+
 	call random_gsa
 
 	ldw ra, 0(sp) ; retreive return address to main procedure from stack
@@ -676,8 +688,6 @@ fate_dead:
 
 ; BEGIN:find_neighbours
 find_neighbours: ;; arguments: register a0: x coordinate of examined cell, register a1: y coordinate of examined cell
-	
-
 
 	addi sp, sp, -20 ; put sX and ra to stack
   	stw s0, 0 (sp) ; store saved registers to stack
@@ -771,8 +781,11 @@ x_loop:
 op_modulo:
 
 	add v0, zero, a0 ; pass the given x coord. by default
-	addi t2, zero, 12 ; set t2 to 12
-	blt v0, s1, return_eleven ; if given x coord. is -1, then return 11 TO CHECK
+
+	addi t2, zero, -1 ; set t2 to -1	
+	beq v0, t2, return_eleven ; if given x coord. is -1, then return 11 TO CHECK
+
+	addi t2, zero, N_GSA_COLUMNS ; set t2 to 12
 	bge v0, t2, return_zero ; if given x coord. is 12, then return 0
 	ret
 
@@ -825,6 +838,10 @@ update_gsa: ;;arguments none /return none
 
 	bne t0, zero, update_row ; update gsa if paused != 0
 
+	ldw t4, GSA_ID(zero) ; load current GSA_ID
+	cmpeqi t5, t4, 0 ; invert GSA_ID
+	stw t5, GSA_ID(zero) ; load current GSA_ID
+
 	ldw ra, 20 (sp) ; retrieve sX and ra to stack
 	ldw s4, 16 (sp)
 	ldw s3, 12 (sp)
@@ -842,13 +859,21 @@ update_row:
 	call update_col
 	add a0, zero, s4 ; put the computed col. to a0
 	add a1, zero, s1 ; put current row index
+
+	ldw t4, GSA_ID(zero) ; load current GSA_ID
+	cmpeqi t5, t4, 0 ; invert GSA_ID
+	stw t5, GSA_ID(zero) ; load current GSA_ID
+
 	call set_gsa
+
+	ldw t4, GSA_ID(zero) ; load current GSA_ID
+	cmpeqi t5, t4, 0 ; invert GSA_ID
+	stw t5, GSA_ID(zero) ; load current GSA_ID
+
 	addi s1, s1, 1 ; increment row index
 	bne s1, s2, update_row ; loop while current y index is 8
 
-	; ldw t4, GSA_ID(zero) ; load current GSA_ID
-	; cmpeqi t5, t4, 0 ; invert GSA_ID
-	; stw t5, GSA_ID(zero) ; load current GSA_ID
+
 
 	
 	ldw ra, 20 (sp) ; retrieve sX and ra to stack
@@ -858,6 +883,10 @@ update_row:
   	ldw s1, 4 (sp)
   	ldw s0, 0 (sp)
   	addi sp, sp, 24
+
+	ldw t4, GSA_ID(zero) ; load current GSA_ID
+	cmpeqi t5, t4, 0 ; invert GSA_ID
+	stw t5, GSA_ID(zero) ; load current GSA_ID
 
 	ret
 
@@ -945,16 +974,19 @@ decrement_step: ;; no arguments / return v0 -> 1 if done 0 if not
 	bne t4, zero, step ; if game running in run state and current step isn't 0
 
 	;; if not any of the previous case it means that state is INIT or RAND thus 
-	add t3, zero, zero ; counter for the loop to set the 7 seg
+	addi t3, zero, 3 ; pointer for 7 seg
 	addi t4, zero, 4 ; number of iterations of the loop
+	add t7, zero, zero ; counter for the loop
 not_run_loop:
 	addi t5, zero, 0xF ; mask to check 4 bits in binary
 	and t1, t2, t5 ; applying mask on number of steps to get SEG[i]
+	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
 	ldw t5, font_data(t1) ; get the number to display in SEG[i]
 	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
 	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
 	srli t2, t2, 4 ; shift right by 4 to be able to isolate next 4 bits
-	addi t3, t3, 1 ; increment counter
+	addi t3, t3, -1 ; move pointer
+	addi t7, t7, 1 ; increment counter
 	blt t3, t4, loop_7Seg ; loop 4 times for each SEG 
 	add v0, zero, zero ; return value is 0 because not done
 	ret
@@ -965,17 +997,20 @@ base_case:
 
 step:
 	addi t2, t2, -1 ; decrement number of step
-	add t3, zero, zero ; counter for the loop to set the 7 seg
+	addi t3, zero, 3 ; pointer for 7 seg
 	addi t4, zero, 4 ; number of iterations of the loop
+	add t7, zero, zero ; counter for loop
 loop_7Seg:
 	addi t5, zero, 0xF ; mask to check 4 bits in binary
 	and t1, t2, t5 ; applying mask on number of steps to get SEG[i]
+	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
 	ldw t5, font_data(t1) ; get the number to display in SEG[i]
 	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
 	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
 	srli t2, t2, 4 ; shift right by 4 to be able to isolate next 4 bits
-	addi t3, t3, 1 ; increment counter
-	blt t3, t4, loop_7Seg ; loop 4 times for each SEG 
+	addi t3, t3, -1 ; move pointer
+	addi t7, t7, 1 ; increment counter
+	blt t7, t4, loop_7Seg ; loop 4 times for each SEG 
 	add v0, zero, zero ; return value is 0 because not done
 	ret 
 
@@ -986,16 +1021,68 @@ loop_7Seg:
 
 ; BEGIN:reset_game
 reset_game: ;;arguments none /return none
-	addi t0, zero, 1 ; constant 1
+	addi sp, sp, -4
+	stw ra, 0(sp)
+
+	addi t0, zero, 0x1 ; constant 1
 	stw t0, CURR_STEP(zero) ; 1. store 1 in CURR_STEP 
-	stw t0, SEVEN_SEGS(zero) ; TODO: 7-seg display to 1 like this?
-;	stw seed0, SEEDS(zero) ; TODO: store seeds
-	stw zero, CURR_STATE(zero) ; set current game state to 0
+
+;;display 1 (i.e 0060) on 7 seg display
+
+	addi t3, zero, 3 ; pointer for 7 segs
+	addi t4, zero, 4 ; number of iterations of the loop
+	add t7, zero, zero ; counter for loop
+reset_loop:
+	addi t5, zero, 0xF ; mask to check 4 bits in binary
+	and t1, t0, t5 ; applying mask on number of steps to get SEG[i]
+	slli t1, t1, 2 ; multiply by 4 the isolated number to get the correct word in font_data
+	ldw t5, font_data(t1) ; get the number to display in SEG[i]
+	slli t6, t3, 2 ; multiply the counter by for to be able to get the right word in the memory
+	stw t5, SEVEN_SEGS(t6) ; store the number to display in the right SEG
+	srli t0, t0, 4 ; shift right by 4 to be able to isolate next 4 bits
+	addi t3, t3, -1 ; move pointer
+	addi t7, t7, 1 ; increment counter
+	blt t7, t4, reset_loop ; loop 4 times for each SEG 
+
+	addi t0, zero, 0x1
 	stw zero, GSA_ID(zero) ; set GSA_ID to zero
-	stw t0, PAUSE(zero) ; set PAUSE to 1
-	stw t0, SPEED(zero) ; set game speed to 1
-	ret
+
+	;stw seed0, SEEDS(zero) ; TODO: store seeds
+	stw zero, SEED(zero)
+	addi t1, zero, seed0
+	add t2, zero, zero; counter for the loop
+	addi t3, zero, N_GSA_LINES ; max lines 
+seed_loop:
+	ldw a0, 0(t1)
+	add a1, zero, t2
+	addi t2, t2, 1 ; increment counter
+	addi t1, t1, 4 ; point to next word
+
+	addi sp, sp, -12
+	stw t0, 0(sp)
+	stw t1, 4(sp)
+	stw t2, 8(sp)
+	call set_gsa
+	ldw t0, 0(sp)
+	ldw t1, 4(sp)
+	ldw t2, 8(sp)
+	addi sp, sp, 12
+	blt t2, t3, seed_loop ; loop while it still hasn't set all the lines
+
 	
+	
+	
+	stw zero, CURR_STATE(zero) ; set current game state to 0
+
+	stw zero, PAUSE(zero) ; set PAUSE to 0
+	stw t0, SPEED(zero) ; set game speed to 1
+
+	call draw_gsa
+	ldw ra, 0(sp)
+	addi sp, sp, 4
+	
+	ret
+	 
 ; END:reset_game
 
 
