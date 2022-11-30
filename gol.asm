@@ -32,57 +32,10 @@
 
 
 main:
-
-	addi sp, zero, 0x1300
-	addi t0, zero, 0b000000000000 ; 000000000000
-	add a0, zero, t0
-	addi a1, zero, 0
-	call set_gsa
-	addi t1, zero, 0b000000011100 ; 000000011100
-	add a0, zero, t1
-	addi a1, zero, 1
-	call set_gsa
-	addi t2, zero, 0b000001100100 ; 000001100100
-	add a0, zero, t2
-	addi a1, zero, 2
-	call set_gsa
-	addi t3, zero, 0b001100101100 ; 001100101100
-	add a0, zero, t3
-	addi a1, zero, 3
-	call set_gsa
-	addi t4, zero, 0b010011100000 ; 010011100000
-	add a0, zero, t4
-	addi a1, zero, 4
-	call set_gsa
-	addi t5, zero, 0b011000000100 ; 011000000100
-	add a0, zero, t5
-	addi a1, zero, 5
-	call set_gsa
-	addi t6, zero, 0b000000000100 ; 000000000100
-	add a0, zero, t6
-	addi a1, zero, 6
-	call set_gsa
-	addi t7, zero, 0b000000000100 ; 000000000100
-	add a0, zero, t7
-	addi a1, zero, 7
-	call set_gsa
-
-	call draw_gsa
-	addi t0, zero, 1
-	stw t0, PAUSE(zero)
-	addi a0, zero, 6
-	addi a1, zero, 3
-	call random_gsa
-
-	;call find_neighbours
-	
-	;call update_gsa
-	call draw_gsa
-	add t0, zero, zero
-	; ;addi a0, zero, 2
-	; ;addi a1, zero, 1
-	; ;call find_neighbours
-
+	addi sp, sp, CUSTOM_VAR_END
+	ldw zero, SEED(zero)
+	call increment_seed
+	ret
 ; 	addi sp, zero, CUSTOM_VAR_END ; initialize stack pointer
 ; 	call reset_game
 ; 	call get_input
@@ -434,14 +387,35 @@ init_increment:
 	beq t1, t4, init_increment_4 ; cf. edstream
 	addi t1, t1, 1 ; increment game seed by 1
 	stw t1, SEED(zero); store incremented seed to SEED
-	call mask ; QUESTION&TODOthis will take charge in copying this seed to current GSA right?
+
+
+	slli t1, t1, 2 ; multiply the seed number by 4 to get the right word
+	ldw t1, SEEDS(t1) ; load the correct seed address -> equivalent to t1 = seed0
+	addi t3, zero, N_GSA_LINES ; number of interations in the for loop 
+	add t2, zero, zero ; counter for the for loop
+
+inc_loop:
+	ldw a0, 0(t1) ; line to set in the gsa
+	add a1, zero, t2 ; y coord for set gsa
+	addi t2, t2, 1 ; increment counter
+	addi t1, t1, 4 ; point to next word
 	
+	addi sp, sp, -8 ; save important register in the stack before making a call to set_gsa
+	stw t1, 0(sp)
+	stw t2, 4(sp)
+	call set_gsa
+	ldw t1, 0(sp)
+	ldw t2, 4(sp)
+	addi sp, sp, 8
+	
+	blt t2, t3, inc_loop ; loop for all the lines in the gsa
+
 	ldw ra, 0(sp) ; retreive return address to main procedure from stack
 	addi sp, sp, 4 ; increment stack pointer by 4
 	ret
 
 init_increment_3:
-	addi t2, zero, N_SEEDS
+	addi t2, zero, N_SEEDS 
 	stw t2, SEED(zero); store N_SEED to SEED
 	call random_gsa
 	
