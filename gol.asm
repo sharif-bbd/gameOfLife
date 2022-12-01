@@ -464,8 +464,7 @@ rand_increment:
 
 ; BEGIN:update_state
 update_state: ;;arguments register a0: edgecapture  / return none
-	addi sp, sp, -4
-	stw ra, 0(sp)
+
 	
     ldw t0, CURR_STATE(zero) ; load current state
     addi t1, zero, INIT ; set t1 to INIT value
@@ -505,8 +504,9 @@ rand_state_change:
     add t5, zero, a0 ; copy a0
     addi t6, zero, 1 ; set constant 1
     ;and t0, t5, t6 ; mask and get b0 
-    ldw t0, SEED(zero) ; set t0 to the current value of SEED
+   
     
+	and t0, t5, t6 ; mask and get b0
     srli t5, t5, 1 ; shift right by 1
     and t1, t5, t6 ; mask and get b1 
     srli t5, t5, 1 ; shift right by 1
@@ -517,6 +517,8 @@ rand_state_change:
     and t4, t5, t6 ; mask and get b4
     ; value of b4 b3 b2 b1 b0 stored
 
+
+	beq t0, t6, rand_set_state ; branch to rand if 0 is pushed
     beq t1, t6, run_set_state ; go to RUN if b1=1
     ret
 
@@ -540,6 +542,8 @@ run_state_change:
     ret
 
 init_set_state:
+	addi sp, sp, -4
+	stw ra, 0(sp)
     addi t0, zero, INIT ; set t0 to INIT
     stw t0, CURR_STATE(zero) ; store INIT in CURR_STATE
     call reset_game ; QUESTION: here jump or call?
@@ -553,6 +557,7 @@ rand_set_state:
     ret
 
 run_set_state:
+	addi t6, zero, RUNNING
     addi t0, zero, RUN ; set t0 to RUN
     stw t6, PAUSE(zero) ; set PAUSE to 1
     stw t0, CURR_STATE(zero) ; store RUN in CURR_STATE
@@ -589,7 +594,7 @@ init_select_action:
     ; value of b4 b3 b2 b1 b0 stored
 
     beq t0, t6, increment_seed ; generate new GSA
-    ;beq t1, t6, update_state ; go to RUN
+    beq t1, t6, update_state ; go to RUN
     addi a0, zero, 0
     addi a1, zero, 0
     add a2, zero, t2
@@ -626,8 +631,8 @@ rand_select_action:
     ; value of b4 b3 b2 b1 b0 stored
 
     
-    beq t0, t6, random_gsa ; generate new GSA
-    ;beq t1, t6, update_state ; go to RUN 
+    beq t0, t6, increment_seed ; generate new GSA
+    beq t1, t6, update_state ; go to RUN 
     addi a0, zero, 0
     addi a1, zero, 0
     add a2, zero, t2
@@ -670,7 +675,7 @@ run_select_action:
 
     addi a0, zero, 1 ; set a0 to 1, decrement
     beq t2, t6, change_speed ; if button 2 pressed, decrement speed by 1
-    ;beq t3, t6, reset_game ; if button 3 pressed, reset_game
+    beq t3, t6, reset_game ; if button 3 pressed, reset_game
     beq t4, t6, random_gsa ; if button 4 pressed, call random gsa
     ret
 
