@@ -33,75 +33,26 @@
 
 main:
 
-    addi sp, zero, 0x1300
-    addi t0, zero, 0b000000000000 ; 000000000000
-    add a0, zero, t0
-    addi a1, zero, 0
-    call set_gsa
-    addi t1, zero, 0b000000011100 ; 000000011100
-    add a0, zero, t1
-    addi a1, zero, 1
-    call set_gsa
-    addi t2, zero, 0b000001100100 ; 000001100100
-    add a0, zero, t2
-    addi a1, zero, 2
-    call set_gsa
-    addi t3, zero, 0b001100101100 ; 001100101100
-    add a0, zero, t3
-    addi a1, zero, 3
-    call set_gsa
-    addi t4, zero, 0b010011100000 ; 010011100000
-    add a0, zero, t4
-    addi a1, zero, 4
-    call set_gsa
-    addi t5, zero, 0b011000000100 ; 011000000100
-    add a0, zero, t5
-    addi a1, zero, 5
-    call set_gsa
-    addi t6, zero, 0b000000000100 ; 000000000100
-    add a0, zero, t6
-    addi a1, zero, 6
-    call set_gsa
-    addi t7, zero, 0b000000000100 ; 000000000100
-    add a0, zero, t7
-    addi a1, zero, 7
-    call set_gsa
 
-    call draw_gsa
-    addi t0, zero, 1
-    stw t0, PAUSE(zero)
-    addi a0, zero, 6
-    addi a1, zero, 3
-    call random_gsa
-
-    ;call find_neighbours
-    
-    ;call update_gsa
-    call draw_gsa
-    add t0, zero, zero
-    ; ;addi a0, zero, 2
-    ; ;addi a1, zero, 1
-    ; ;call find_neighbours
-
-;   addi sp, zero, CUSTOM_VAR_END ; initialize stack pointer
-;   call reset_game
-;   call get_input
-;   add s0, zero, v0 ; e gets the value from get input as said in the pseudo code
-;   add s1, zero, zero ; done is supposed to be false thus 0
-; main_loop:
-;   add a0, zero, v0 ; edgecapture in argument for select action
-;   call select_action
-;   call update_state ; same argument as select_action
-;   call update_gsa
-;   call mask
-;   call draw_gsa
-;   call wait
-;   call decrement_step
-;   add s1, zero, v0 ; changes the val of done
-;   call get_input
-;   add s0, zero, v0 ; changes the value of e
-;   beq s1, zero, main_loop ; while the program isn't done keep running
-;   jmpi main
+   addi sp, zero, CUSTOM_VAR_END ; initialize stack pointer
+   call reset_game
+   call get_input
+   add s0, zero, v0 ; e gets the value from get input as said in the pseudo code
+   add s1, zero, zero ; done is supposed to be false thus 0
+main_loop:
+   add a0, zero, v0 ; edgecapture in argument for select action
+   call select_action
+   call update_state ; same argument as select_action
+   call update_gsa;
+   call mask
+   call draw_gsa
+   call wait
+   call decrement_step
+   add s1, zero, v0 ; changes the val of done
+   call get_input
+   add s0, zero, v0 ; changes the value of e
+   beq s1, zero, main_loop ; while the program isn't done keep running
+   jmpi main
     
 
 
@@ -589,6 +540,7 @@ init_set_state:
     addi t0, zero, INIT ; set t0 to INIT
     stw t0, CURR_STATE(zero) ; store INIT in CURR_STATE
     call reset_game ; QUESTION: here jump or call?
+	ret
 
 rand_set_state:
     addi t0, zero, RAND ; set t0 to RAND
@@ -638,12 +590,12 @@ init_select_action:
     add a2, zero, t2
     beq t2, t6, change_steps ; if button 2 is pressed, change steps
     addi a0, zero, 0
-    addi a1, zero, t3
-    add a2, zero, 0
+    add a1, zero, t3
+    addi a2, zero, 0
     beq t3, t6, change_steps ; if button 3 is pressed, change steps
-    addi a0, zero, t4
+    add a0, zero, t4
     addi a1, zero, 0
-    add a2, zero, 0
+    addi a2, zero, 0
     beq t4, t6, change_steps ; if button 4 is pressed, change steps
     ret
 
@@ -676,12 +628,12 @@ rand_select_action:
     add a2, zero, t2
     beq t2, t6, change_steps ; if button 2 is pressed, change steps
     addi a0, zero, 0
-    addi a1, zero, t3
-    add a2, zero, 0
+    add a1, zero, t3
+    addi a2, zero, 0 
     beq t3, t6, change_steps ; if button 3 is pressed, change steps
-    addi a0, zero, t4
+    add a0, zero, t4
     addi a1, zero, 0
-    add a2, zero, 0
+    addi a2, zero, 0
     beq t4, t6, change_steps ; if button 4 is pressed, change steps
     ret
 
