@@ -464,6 +464,9 @@ rand_increment:
 
 ; BEGIN:update_state
 update_state: ;;arguments register a0: edgecapture  / return none
+	addi sp, sp, -4
+	stw ra, 0(sp)
+	
     ldw t0, CURR_STATE(zero) ; load current state
     addi t1, zero, INIT ; set t1 to INIT value
     addi t2, zero, RAND ; set t2 to RAN value
@@ -540,6 +543,8 @@ init_set_state:
     addi t0, zero, INIT ; set t0 to INIT
     stw t0, CURR_STATE(zero) ; store INIT in CURR_STATE
     call reset_game ; QUESTION: here jump or call?
+	ldw ra, 0(sp)
+	addi sp, sp, 4
 	ret
 
 rand_set_state:
