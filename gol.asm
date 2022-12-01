@@ -179,16 +179,11 @@ set_1: ; if gsa_1 is the current then gsa_0 is the next
 
 ; BEGIN:draw_gsa
 draw_gsa: ;; arguments none / return none
-	addi sp, zero, 0x1300 ; init stack pointer to the stack bottom TODO: check si c'est ici
 	
 	addi sp, sp, -4 ; decrement stack pointer by 4
 	stw ra, 0(sp) ; store return address from main procedure
 
 	call clear_leds ; clear all the leds before drawing
-
-	
-
-	addi t0, zero, 1 ; init var to 1
 	
 	add t1, zero, zero ; init var to 0 (counter for y coord)
 	add t3, zero,zero ; counter for x coord
@@ -199,10 +194,18 @@ draw_y: ; draw GSA 1 y coord
 	addi t1, t1, 1 ; increment t1 by 1
 	addi t5, zero, 1 ; constant 1 (model for comparison)
 
-	addi sp, sp, -4 ; decrement stack pointer by 4
-	stw t1, 0(sp) ; store the y counter in the stack	
+	addi sp, sp, -16 ; decrement stack pointer by 4
+	stw t1, 12(sp)
+	stw t3, 8(sp) ; store the y counter in the stack	
+	stw t5, 4(sp)
+	stw a0, 0(sp)
 
 	call get_gsa ; gets the gsa at line a0 from gsa 1
+
+	ldw a0, 0(sp)
+	ldw t5, 4(sp)
+	ldw t3, 8(sp)
+	addi sp, sp, 12
 
 	add t3, zero,zero ;reinitialize x coord to 0
 	add t4, v0, zero ; store the gsa line into a var
@@ -221,8 +224,22 @@ draw_x: ; draw each bit in the line at coord y
 	
 	addi sp, sp, -4 ; push model for comparison in stack because $t5 is modified in set pixel
 	stw t5, 0(sp)
+
+	addi sp, sp, -4
+	stw t4, 0(sp)
+
+	addi sp, sp, -12
+	stw t0, 8(sp)
+	stw a0, 4(sp)
+	stw a1, 0(sp)
 	
 	call set_if_1 ; outside procedure that will set the pixel if it is 1 in the gsa
+	
+	ldw a1, 0(sp)
+	ldw a0, 4(sp)
+	ldw t0, 8(sp)
+	ldw t4, 12(sp)
+	addi sp, sp, 16
 
 	ldw t5, 0(sp) ; pop back comparison value from stack
 	addi sp, sp, 4
@@ -281,7 +298,7 @@ loop_random:
 
 	addi t6, zero, N_GSA_COLUMNS ; set t6 to 12 for counter
 	add t7, zero, zero ; set t7 empty register
-	addi t2, zero, 8 ; set t2 to constant 8 TODO: change the 1 to 8 later, it was just for testing
+	addi t2, zero, 8 ; set t2 to constant 8 
 	addi t4, t4, 1 ; increment counter
 	bne t4, t2, loop_random ; loop if not all 8 lines are generated yet
 	ldw ra, 0(sp) ; retreive return address to main procedure from stack
@@ -340,6 +357,9 @@ pause_game: ;;arguments none /return none
 ; BEGIN:change_steps
 change_steps: ;;arguments register a0(units), a1(tens), a2(hundreds) / return none
 
+	addi sp, sp, -4 ; decrement stack pointer by 4
+	stw ra, 0(sp) ; store return address from main procedure
+
 	ldw t3, CURR_STEP(zero) ; load CURR_STEP value
 	add t5, zero, t3 ; store CURR_STEP to t5
 
@@ -352,6 +372,9 @@ change_steps: ;;arguments register a0(units), a1(tens), a2(hundreds) / return no
 	add t5, t5, t0 ; add CURR_STEP and the input values
 
 	stw t5, CURR_STEP(zero) ; store computed value to CURR_STEP
+
+	ldw ra, 0(sp) ; retreive return address to main procedure from stack
+	addi sp, sp, 4 ; increment stack pointer by 4
 
 	ret
 
@@ -475,7 +498,7 @@ init_state_change:
 
 	beq t0, t5, rand_set_state ; go to RAND if b0=N_SEEDS
 	beq t1, t6, run_set_state ; go to RUN if b1=1
-	
+	ret
 
 rand_state_change:
 	add t5, zero, a0 ; copy a0
@@ -494,7 +517,7 @@ rand_state_change:
 	; value of b4 b3 b2 b1 b0 stored
 
 	beq t1, t6, run_set_state ; go to RUN if b1=1
-
+	ret
 
 run_state_change:
 	add t5, zero, a0 ; copy a0
@@ -513,7 +536,7 @@ run_state_change:
 	; value of b4 b3 b2 b1 b0 stored
 
 	beq t3, t6, init_set_state ; go to INIT if b3=1
-
+	ret
 
 init_set_state:
 	addi t0, zero, INIT ; set t0 to INIT
@@ -563,8 +586,17 @@ init_select_action:
 
 	beq t0, t6, increment_seed ; generate new GSA
 	;beq t1, t6, update_state ; go to RUN
+	addi a0, zero, 0
+	addi a1, zero, 0
+	add a2, zero, t2
 	beq t2, t6, change_steps ; if button 2 is pressed, change steps
+	addi a0, zero, 0
+	addi a1, zero, t3
+	add a2, zero, 0
 	beq t3, t6, change_steps ; if button 3 is pressed, change steps
+	addi a0, zero, t4
+	addi a1, zero, 0
+	add a2, zero, 0
 	beq t4, t6, change_steps ; if button 4 is pressed, change steps
 	ret
 
@@ -592,8 +624,17 @@ rand_select_action:
 	
 	beq t0, t6, random_gsa ; generate new GSA
 	;beq t1, t6, update_state ; go to RUN 
+	addi a0, zero, 0
+	addi a1, zero, 0
+	add a2, zero, t2
 	beq t2, t6, change_steps ; if button 2 is pressed, change steps
+	addi a0, zero, 0
+	addi a1, zero, t3
+	add a2, zero, 0
 	beq t3, t6, change_steps ; if button 3 is pressed, change steps
+	addi a0, zero, t4
+	addi a1, zero, 0
+	add a2, zero, 0
 	beq t4, t6, change_steps ; if button 4 is pressed, change steps
 	ret
 
@@ -812,10 +853,6 @@ update_gsa: ;;arguments none /return none
 
 	bne t0, zero, update_row ; update gsa if paused != 0
 
-	ldw t4, GSA_ID(zero) ; load current GSA_ID
-	cmpeqi t5, t4, 0 ; invert GSA_ID
-	stw t5, GSA_ID(zero) ; load current GSA_ID
-
 	ldw ra, 20 (sp) ; retrieve sX and ra to stack
 	ldw s4, 16 (sp)
 	ldw s3, 12 (sp)
@@ -933,12 +970,13 @@ get_input: ;; no argument / return edgecapture in v0
 	ret
 ; END:get_input
 
+
 ; BEGIN:decrement_step
 decrement_step: ;; no arguments / return v0 -> 1 if done 0 if not
 	ldw t0, CURR_STATE(zero)
 	ldw t1, PAUSE(zero)
 	ldw t2, CURR_STEP(zero)
-	cmpeqi t0, t0, RUN; checks if the current state is run
+	cmpeqi t0, t0, RUN ; checks if the current state is run
 	cmpeqi t1, t1, RUNNING ; checks if the game is running
 	cmpeq t3, t2, zero ; checks if the current step is 0
 	and t4, t0, t1 ; is 1 if the game is running and in the run state
@@ -971,6 +1009,8 @@ base_case:
 
 step:
 	addi t2, t2, -1 ; decrement number of step
+	stw t2, CURR_STEP(zero) ; store the decremented number of steps
+
 	addi t3, zero, 3 ; pointer for 7 seg
 	addi t4, zero, 4 ; number of iterations of the loop
 	add t7, zero, zero ; counter for loop
